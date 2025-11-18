@@ -1,51 +1,98 @@
 @echo off
-echo ====================================
-echo SC Inventory Manager - Setup
-echo ====================================
-echo.
-echo Dieses Script wird:
-echo 1. Dependencies installieren
-echo 2. Das Programm starten
-echo.
-pause
+setlocal EnableDelayedExpansion
+title GearCrate Setup & Start
 
-REM Check if Python is installed
+echo ===================================================
+echo   GearCrate - Automatisches Setup
+echo ===================================================
+echo.
+
+:: ---------------------------------------------------
+:: 1. PRÜFUNG: Ist Python installiert und aktuell genug?
+:: ---------------------------------------------------
 python --version >nul 2>&1
-if errorlevel 1 (
-    echo FEHLER: Python ist nicht installiert!
-    echo Bitte installiere Python von https://www.python.org/
-    pause
-    exit /b 1
+if %errorlevel% neq 0 (
+    goto :INSTALL_PYTHON
 )
 
-echo.
-echo [1/2] Installiere Dependencies...
-echo ====================================
-echo.
+:: Prüfen ob Version >= 3.8 ist (über ein kleines Inline-Python-Skript)
+python -c "import sys; exit(0 if sys.version_info >= (3,8) else 1)"
+if %errorlevel% neq 0 (
+    echo [!] Deine Python-Version ist zu alt.
+    goto :INSTALL_PYTHON
+)
 
-REM Install requirements
-python -m pip install --upgrade pip
+echo [OK] Passende Python-Version gefunden.
+goto :INSTALL_REQS
+
+:: ---------------------------------------------------
+:: 2. PYTHON INSTALLATION (falls nötig)
+:: ---------------------------------------------------
+:INSTALL_PYTHON
+echo.
+echo [!] Python wurde nicht gefunden oder ist veraltet.
+echo [+] Lade Python 3.11 Installer herunter... (bitte warten)
+
+:: Temporären Ordner nutzen
+set "INSTALLER_URL=https://www.python.org/ftp/python/3.11.7/python-3.11.7-amd64.exe"
+set "INSTALLER_PATH=%TEMP%\python_installer.exe"
+
+:: Download via PowerShell
+powershell -Command "Invoke-WebRequest -Uri '!INSTALLER_URL!' -OutFile '!INSTALLER_PATH!'"
+
+if not exist "!INSTALLER_PATH!" (
+    echo [FEHLER] Download fehlgeschlagen. Bitte installiere Python manuell von python.org.
+    pause
+    exit /b
+)
+
+echo [+] Installiere Python... (Ein Admin-Fenster oeffnet sich evtl.)
+echo     Bitte kurz warten, dies geschieht im Hintergrund.
+
+:: Silent Install mit PATH Variable
+start /wait "" "!INSTALLER_PATH!" /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+
+echo.
+echo [!] Python wurde installiert. 
+echo [WICHTIG] Damit die Aenderungen wirksam werden, muss das Skript neu starten.
+echo.
+del "!INSTALLER_PATH!"
+pause
+:: Startet das Skript neu, damit die neuen Umgebungsvariablen (PATH) geladen werden
+start "" "%~f0"
+exit
+
+:: ---------------------------------------------------
+:: 3. REQUIREMENTS INSTALLIEREN
+:: ---------------------------------------------------
+:INSTALL_REQS
+echo.
+echo [+] Prüfe und installiere Requirements (requirements.txt)...
 pip install -r requirements.txt
 
-if errorlevel 1 (
+if %errorlevel% neq 0 (
     echo.
-    echo Installation fehlgeschlagen. Versuche mit --break-system-packages...
-    pip install -r requirements.txt --break-system-packages
-)
-
-echo.
-echo [2/2] Starte Programm...
-echo ====================================
-echo.
-
-REM Start the application
-python src/main.py
-
-if errorlevel 1 (
-    echo.
-    echo ====================================
-    echo FEHLER beim Starten!
-    echo ====================================
-    echo.
+    echo [FEHLER] Beim Installieren der Requirements ist ein Fehler aufgetreten.
+    echo Stelle sicher, dass du Internet hast.
     pause
+    exit /b
 )
+
+:: ---------------------------------------------------
+:: 4. PROGRAMM STARTEN
+:: ---------------------------------------------------
+:START_APP
+echo.
+echo [OK] Alles bereit! Starte GearCrate...
+echo.
+:: Ruft die start-browser.bat auf, da diese den korrekten Startbefehl enthält
+call start-browser.bat
+
+:: Falls start-browser.bat nicht existiert oder fehlschlägt, hier ein Fallback:
+if %errorlevel% neq 0 (
+    echo [!] start-browser.bat nicht gefunden oder fehlgeschlagen.
+    echo Versuche direkten Start...
+    python src/main.py
+)
+
+pause
