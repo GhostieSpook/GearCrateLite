@@ -24,7 +24,6 @@ wheels/
 *.egg
 
 # PNG
-
 data/cache/images/*.png
 
 # IDE
