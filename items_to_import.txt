@@ -1,0 +1,11 @@
+# Star Citizen Items zum Importieren
+# Eine Item-Name pro Zeile
+# Zeilen die mit # beginnen werden ignoriert
+# Format: ItemName|Typ (optional)
+
+# Beispiele:
+# Morozov-SH Core|Torso
+# Pembroke Backpack|Backpack
+# Novikov Helmet|Helmet
+
+# Füge hier deine Items ein:

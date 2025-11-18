@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SC Inventory Manager - Bulk Import</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🚀 Star Citizen Inventory Manager</h1>
+            <div class="stats" id="stats">
+                <span>Items: <strong id="total-items">0</strong></span>
+                <span>Gesamt: <strong id="total-count">0</strong></span>
+                <span>Cache: <strong id="cache-size">0 MB</strong></span>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navigation">
+            <a href="index.html" class="nav-link">📦 Inventar</a>
+            <a href="bulk-import.html" class="nav-link active">⚡ Bulk Import</a>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Import Section -->
+            <div class="bulk-import-section">
+                <h2>Bulk Import von CStone.space</h2>
+                <p class="info-text">
+                    Importiere FPS-Rüstungsteile - entweder automatisch oder durch Kopieren der Tabelle.
+                </p>
+
+                <!-- Import Method Selection -->
+                <div class="import-method-box">
+                    <h3>Import-Methode wählen:</h3>
+                    <div class="method-buttons">
+                        <button id="method-scrape" class="method-btn active">🌐 Automatisch (Scraping)</button>
+                        <button id="method-paste" class="method-btn">📋 Manuell (Copy & Paste)</button>
+                    </div>
+                </div>
+
+                <!-- Scraping Method -->
+                <div id="scraping-section" class="import-section-method">
+                    <!-- Categories Selection -->
+                    <div class="categories-box">
+                        <h3>Kategorien auswählen:</h3>
+                        <div class="category-list">
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Torsos" checked>
+                                <span>🦺 Torsos</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Arms" checked>
+                                <span>🧤 Arms</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Legs" checked>
+                                <span>👖 Legs</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Helmets" checked>
+                                <span>🪖 Helmets</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Backpacks" checked>
+                                <span>🎒 Backpacks</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Undersuits" checked>
+                                <span>👔 Undersuits</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Hüte">
+                                <span>🎩 Hüte</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Brillen">
+                                <span>👓 Brillen</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Handschuhe">
+                                <span>🧤 Handschuhe</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Jacken">
+                                <span>🧥 Jacken</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="T-Shirts">
+                                <span>👕 T-Shirts</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Jumpsuits">
+                                <span>🦺 Jumpsuits</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Hosen (Kleidung)">
+                                <span>👖 Hosen (Kleidung)</span>
+                            </label>
+                            <label class="category-item">
+                                <input type="checkbox" class="category-checkbox" value="Schuhe">
+                                <span>👟 Schuhe</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Import Controls -->
+                    <div class="import-controls">
+                        <button id="start-import-btn" class="btn-primary btn-large">
+                            🚀 Import starten
+                        </button>
+                        <button id="stop-import-btn" class="btn-danger btn-large" style="display: none;">
+                            ⛔ Import abbrechen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Paste Method -->
+                <div id="paste-section" class="import-section-method" style="display: none;">
+                    <div class="paste-box">
+                        <h3>Tabellendaten einfügen:</h3>
+                        <p class="info-text-small">
+                            Kopiere die Tabelle von CStone.space und füge sie hier ein. 
+                            Jede Zeile sollte: Name, Type, ... enthalten.
+                        </p>
+                        <textarea id="paste-textarea" placeholder="Hier Tabellendaten einfügen...
+Beispiel:
+Odyssey II Helmet Starcrossed	Flight Helmet	10%	-30	60	15200	81	0	15700
+Corbel Helmet Mire	Heavy Armor	40%	-70	100	26800	145.8	0	19000"></textarea>
+                        
+                        <!-- Item Type Selection -->
+                        <div class="type-selection">
+                            <label for="paste-item-type">Item-Typ:</label>
+                            <select id="paste-item-type">
+                                <option value="Torso">Torso</option>
+                                <option value="Arms">Arms</option>
+                                <option value="Legs">Legs</option>
+                                <option value="Helmet" selected>Helmet</option>
+                                <option value="Backpack">Backpack</option>
+                                <option value="Undersuit">Undersuit</option>
+                                <option value="Hat">Hut</option>
+                                <option value="Eyes">Brille</option>
+                                <option value="Hands">Handschuhe</option>
+                                <option value="Jacket">Jacke</option>
+                                <option value="Shirt">T-Shirt</option>
+                                <option value="Jumpsuit">Jumpsuit</option>
+                                <option value="Pants">Hose (Kleidung)</option>
+                                <option value="Shoes">Schuhe</option>
+                            </select>
+                        </div>
+
+                        <div class="import-controls">
+                            <button id="paste-import-btn" class="btn-primary btn-large">
+                                📥 Daten importieren
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Display -->
+                <div id="import-progress" class="import-progress hidden">
+                    <h3>Import läuft...</h3>
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>Fortschritt: <strong id="progress-current">0</strong> / <strong id="progress-total">0</strong></span>
+                        <span>Importiert: <strong id="progress-imported">0</strong></span>
+                        <span>Übersprungen: <strong id="progress-skipped">0</strong></span>
+                    </div>
+                    <div id="current-category" class="current-category"></div>
+                </div>
+
+                <!-- Log Display -->
+                <div id="import-log" class="import-log">
+                    <h3>Import-Log</h3>
+                    <div id="log-content" class="log-content">
+                        <div class="log-entry log-info">Bereit zum Import...</div>
+                    </div>
+                </div>
+
+                <!-- Database Management Section -->
+                <div class="database-management">
+                    <h3>⚠️ Datenbank-Verwaltung</h3>
+                    <p class="info-text-small">
+                        <strong>Achtung:</strong> Diese Aktionen können nicht rückgängig gemacht werden!
+                    </p>
+                    <div class="db-actions">
+                        <button id="clear-inventory-btn" class="btn-warning btn-large">
+                            🗑️ Inventar leeren
+                        </button>
+                        <button id="delete-all-btn" class="btn-danger btn-large">
+                            🚫 Datenbank löschen
+                        </button>
+                        <button id="clear-cache-btn" class="btn-warning btn-large">
+                            🗃️ Cache leeren
+                        </button>
+                    </div>
+                    <div class="db-info">
+                        <p><strong>Inventar leeren:</strong> Setzt alle Item-Zähler auf 0 (Items bleiben in Datenbank)</p>
+                        <p><strong>Datenbank löschen:</strong> Löscht ALLE Items komplett aus der Datenbank</p>
+                        <p><strong>Cache leeren:</strong> Löscht alle heruntergeladenen Bilder</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="api-adapter.js"></script>
+    <script>
+        // Bulk Import Controller
+        const BulkImport = {
+            isRunning: false,
+            shouldStop: false,
+            stats: {
+                total: 0,
+                current: 0,
+                imported: 0,
+                skipped: 0
+            },
+
+            categoryMapping: {
+                'Torsos': { url: 'FPSArmors?type=Torsos', type: 'Torso' },
+                'Arms': { url: 'FPSArmors?type=Arms', type: 'Arms' },
+                'Legs': { url: 'FPSArmors?type=Legs', type: 'Legs' },
+                'Helmets': { url: 'FPSArmors?type=Helmets', type: 'Helmet' },
+                'Backpacks': { url: 'FPSArmors?type=Backpacks', type: 'Backpack' },
+                'Undersuits': { url: 'FPSArmors?type=Undersuits', type: 'Undersuit' },
+                'Hüte': { url: 'FPSClothes?type=Hat', type: 'Hat' },
+                'Brillen': { url: 'FPSClothes?type=Eyes', type: 'Eyes' },
+                'Handschuhe': { url: 'FPSClothes?type=Hands', type: 'Hands' },
+                'Jacken': { url: 'FPSClothes?type=Jacket', type: 'Jacket' },
+                'T-Shirts': { url: 'FPSClothes?type=Shirt', type: 'Shirt' },
+                'Jumpsuits': { url: 'FPSClothes?type=Jumpsuit', type: 'Jumpsuit' },
+                'Hosen (Kleidung)': { url: 'FPSClothes?type=Legs', type: 'Pants' },
+                'Schuhe': { url: 'FPSClothes?type=Feet', type: 'Shoes' }
+            },
+
+            init() {
+                // Method switching
+                document.getElementById('method-scrape').addEventListener('click', () => this.switchMethod('scrape'));
+                document.getElementById('method-paste').addEventListener('click', () => this.switchMethod('paste'));
+                
+                // Scraping import
+                document.getElementById('start-import-btn').addEventListener('click', () => this.startScraping());
+                document.getElementById('stop-import-btn').addEventListener('click', () => this.stop());
+                
+                // Paste import
+                document.getElementById('paste-import-btn').addEventListener('click', () => this.startPaste());
+                
+                // Database management
+                document.getElementById('clear-inventory-btn').addEventListener('click', () => this.clearInventory());
+                document.getElementById('delete-all-btn').addEventListener('click', () => this.deleteAllItems());
+                document.getElementById('clear-cache-btn').addEventListener('click', () => this.clearCache());
+                
+                this.loadStats();
+            },
+
+            switchMethod(method) {
+                // Update buttons
+                document.getElementById('method-scrape').classList.toggle('active', method === 'scrape');
+                document.getElementById('method-paste').classList.toggle('active', method === 'paste');
+                
+                // Show/hide sections
+                document.getElementById('scraping-section').style.display = method === 'scrape' ? 'block' : 'none';
+                document.getElementById('paste-section').style.display = method === 'paste' ? 'block' : 'none';
+            },
+
+            async loadStats() {
+                try {
+                    const stats = await api.getStats();
+                    document.getElementById('total-items').textContent = stats.total_unique_items;
+                    document.getElementById('total-count').textContent = stats.total_item_count;
+                    document.getElementById('cache-size').textContent = stats.cache_size_mb + ' MB';
+                } catch (error) {
+                    console.error('Fehler beim Laden der Stats:', error);
+                }
+            },
+
+            getSelectedCategories() {
+                const checkboxes = document.querySelectorAll('.category-checkbox:checked');
+                return Array.from(checkboxes).map(cb => cb.value);
+            },
+
+            log(message, type = 'info') {
+                const logContent = document.getElementById('log-content');
+                const entry = document.createElement('div');
+                entry.className = `log-entry log-${type}`;
+                entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+                logContent.appendChild(entry);
+                logContent.scrollTop = logContent.scrollHeight;
+            },
+
+            updateProgress() {
+                const percent = this.stats.total > 0 ? (this.stats.current / this.stats.total) * 100 : 0;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-current').textContent = this.stats.current;
+                document.getElementById('progress-total').textContent = this.stats.total;
+                document.getElementById('progress-imported').textContent = this.stats.imported;
+                document.getElementById('progress-skipped').textContent = this.stats.skipped;
+            },
+
+            async startScraping() {
+                if (this.isRunning) return;
+
+                const categories = this.getSelectedCategories();
+                if (categories.length === 0) {
+                    alert('Bitte mindestens eine Kategorie auswählen!');
+                    return;
+                }
+
+                this.isRunning = true;
+                this.shouldStop = false;
+                this.stats = { total: 0, current: 0, imported: 0, skipped: 0 };
+
+                // UI Updates
+                document.getElementById('start-import-btn').style.display = 'none';
+                document.getElementById('stop-import-btn').style.display = 'inline-block';
+                document.getElementById('import-progress').classList.remove('hidden');
+                document.getElementById('log-content').innerHTML = '';
+
+                this.log('Import gestartet...', 'success');
+                this.log(`Ausgewählte Kategorien: ${categories.join(', ')}`, 'info');
+
+                try {
+                    for (const category of categories) {
+                        if (this.shouldStop) break;
+
+                        const categoryData = this.categoryMapping[category];
+                        await this.importCategory(category, categoryData);
+                    }
+
+                    if (!this.shouldStop) {
+                        this.log('✅ Import erfolgreich abgeschlossen!', 'success');
+                        this.log(`Importiert: ${this.stats.imported} | Übersprungen: ${this.stats.skipped}`, 'success');
+                    } else {
+                        this.log('⚠️ Import wurde abgebrochen', 'warning');
+                    }
+                } catch (error) {
+                    this.log(`❌ Fehler beim Import: ${error.message}`, 'error');
+                    console.error(error);
+                }
+
+                // Cleanup
+                this.isRunning = false;
+                document.getElementById('start-import-btn').style.display = 'inline-block';
+                document.getElementById('stop-import-btn').style.display = 'none';
+                
+                // Reload stats
+                await this.loadStats();
+            },
+
+            async startPaste() {
+                const textarea = document.getElementById('paste-textarea');
+                const itemType = document.getElementById('paste-item-type').value;
+                const text = textarea.value.trim();
+
+                if (!text) {
+                    alert('Bitte Tabellendaten einfügen!');
+                    return;
+                }
+
+                this.isRunning = true;
+                this.stats = { total: 0, current: 0, imported: 0, skipped: 0 };
+
+                // UI Updates
+                document.getElementById('import-progress').classList.remove('hidden');
+                document.getElementById('log-content').innerHTML = '';
+
+                this.log('Parse Tabellendaten...', 'info');
+
+                // Parse table data
+                const lines = text.split('\n').filter(line => line.trim());
+                const items = [];
+
+                for (const line of lines) {
+                    // Split by tab or multiple spaces
+                    const parts = line.split(/\t+|\s{2,}/);
+                    
+                    if (parts.length > 0) {
+                        const name = parts[0].trim();
+                        if (name && name !== '❐' && !name.toLowerCase().includes('name')) {
+                            items.push({
+                                name: name,
+                                type: itemType
+                            });
+                        }
+                    }
+                }
+
+                this.log(`Gefunden: ${items.length} Items`, 'info');
+                this.stats.total = items.length;
+                this.updateProgress();
+
+                // Import items
+                for (const item of items) {
+                    if (this.shouldStop) break;
+
+                    try {
+                        const existing = await api.getItem(item.name);
+                        
+                        if (existing) {
+                            this.log(`⏭️  "${item.name}" bereits vorhanden`, 'warning');
+                            this.stats.skipped++;
+                        } else {
+                            const result = await api.addItem(item.name, item.type, null, null, 0); // initial_count=0
+
+                            if (result.success) {
+                                this.log(`✅ "${item.name}" importiert`, 'success');
+                                this.stats.imported++;
+                            } else {
+                                this.log(`❌ Fehler bei "${item.name}": ${result.error}`, 'error');
+                            }
+                        }
+                    } catch (error) {
+                        this.log(`❌ Fehler bei "${item.name}": ${error.message}`, 'error');
+                    }
+
+                    this.stats.current++;
+                    this.updateProgress();
+                    await this.sleep(100);
+                }
+
+                this.log('✅ Import abgeschlossen!', 'success');
+                this.log(`Importiert: ${this.stats.imported} | Übersprungen: ${this.stats.skipped}`, 'success');
+                
+                this.isRunning = false;
+                await this.loadStats();
+            },
+
+            async importCategory(categoryName, categoryData) {
+                this.log(`📦 Starte Kategorie: ${categoryName}`, 'info');
+                document.getElementById('current-category').textContent = `Aktuelle Kategorie: ${categoryName}`;
+
+                try {
+                    // Call backend API to get all items from category
+                    const response = await fetch(`/api/bulk-import/${encodeURIComponent(categoryData.url)}`);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+
+                    const items = await response.json();
+                    this.log(`Gefunden: ${items.length} Items in ${categoryName}`, 'info');
+
+                    this.stats.total += items.length;
+                    this.updateProgress();
+
+                    // Import jedes Item
+                    for (const item of items) {
+                        if (this.shouldStop) break;
+
+                        try {
+                            // Check if exists
+                            const existing = await api.getItem(item.name);
+                            
+                            if (existing) {
+                                this.log(`⏭️  "${item.name}" bereits vorhanden`, 'warning');
+                                this.stats.skipped++;
+                            } else {
+                                // Add new item with count=0
+                                const result = await api.addItem(
+                                    item.name,
+                                    categoryData.type,
+                                    item.image_url,
+                                    null,  // notes
+                                    0      // initial_count = 0
+                                );
+
+                                if (result.success) {
+                                    this.log(`✅ "${item.name}" importiert`, 'success');
+                                    this.stats.imported++;
+                                } else {
+                                    this.log(`❌ Fehler bei "${item.name}": ${result.error}`, 'error');
+                                }
+                            }
+                        } catch (itemError) {
+                            this.log(`❌ Fehler bei "${item.name}": ${itemError.message}`, 'error');
+                        }
+
+                        this.stats.current++;
+                        this.updateProgress();
+
+                        // Rate limiting
+                        await this.sleep(200);
+                    }
+
+                    this.log(`✅ Kategorie ${categoryName} abgeschlossen`, 'success');
+                } catch (error) {
+                    this.log(`❌ Fehler bei Kategorie ${categoryName}: ${error.message}`, 'error');
+                    throw error;
+                }
+            },
+
+            stop() {
+                this.shouldStop = true;
+                this.log('Import wird abgebrochen...', 'warning');
+            },
+
+            async clearInventory() {
+                if (!confirm('⚠️ Inventar wirklich leeren?\n\nAlle Item-Zähler werden auf 0 gesetzt.\nDie Items bleiben in der Datenbank.')) {
+                    return;
+                }
+
+                try {
+                    const result = await api.clearInventory();
+                    if (result.success) {
+                        this.log(`✓ Inventar geleert: ${result.affected} Items auf 0 gesetzt`, 'success');
+                        await this.loadStats();
+                        alert(`Inventar geleert!\n${result.affected} Items wurden auf Count 0 gesetzt.`);
+                    } else {
+                        this.log(`✗ Fehler: ${result.error}`, 'error');
+                        alert('Fehler beim Leeren des Inventars');
+                    }
+                } catch (error) {
+                    this.log(`✗ Fehler: ${error.message}`, 'error');
+                    console.error(error);
+                }
+            },
+
+            async deleteAllItems() {
+                if (!confirm('🚫 ACHTUNG: Datenbank wirklich komplett löschen?\n\nALLE Items werden dauerhaft gelöscht!\nDieser Vorgang kann NICHT rückgängig gemacht werden!')) {
+                    return;
+                }
+
+                // Double confirmation
+                if (!confirm('Bist du dir ABSOLUT SICHER?\n\nSchreibe "JA" in das nächste Feld um zu bestätigen.')) {
+                    return;
+                }
+
+                const confirmation = prompt('Gib "JA" ein um die Datenbank zu löschen:');
+                if (confirmation !== 'JA') {
+                    alert('Abgebrochen.');
+                    return;
+                }
+
+                try {
+                    const result = await api.deleteAllItems();
+                    if (result.success) {
+                        this.log(`✓ Datenbank gelöscht: ${result.deleted} Items entfernt`, 'success');
+                        await this.loadStats();
+                        alert(`Datenbank gelöscht!\n${result.deleted} Items wurden entfernt.`);
+                    } else {
+                        this.log(`✗ Fehler: ${result.error}`, 'error');
+                        alert('Fehler beim Löschen der Datenbank');
+                    }
+                } catch (error) {
+                    this.log(`✗ Fehler: ${error.message}`, 'error');
+                    console.error(error);
+                }
+            },
+
+            async clearCache() {
+                if (!confirm('🗃️ Bild-Cache wirklich leeren?\n\nAlle heruntergeladenen Bilder werden gelöscht.\nSie werden beim nächsten Aufruf neu heruntergeladen.')) {
+                    return;
+                }
+
+                try {
+                    const result = await api.clearCache();
+                    if (result.success) {
+                        this.log(`✓ Cache geleert`, 'success');
+                        await this.loadStats();
+                        alert('Bild-Cache wurde geleert!');
+                    } else {
+                        this.log(`✗ Fehler: ${result.error}`, 'error');
+                        alert('Fehler beim Leeren des Cache');
+                    }
+                } catch (error) {
+                    this.log(`✗ Fehler: ${error.message}`, 'error');
+                    console.error(error);
+                }
+            },
+
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            BulkImport.init();
+        });
+    </script>
+</body>
+</html>

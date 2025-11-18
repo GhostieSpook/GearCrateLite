@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:fb="https://www.facebook.com/2008/fbml" xmlns:og="http://ogp.me/ns#">
+ <head>
+  <link href="/ico.png" rel="icon" type="image/png"/>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-J37D2DEDKG">
+  </script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-J37D2DEDKG');
+  </script>
+  <meta content="CStone: Universal Item Finder" property="og:title"/>
+  <meta content="website" property="og:type"/>
+  <meta content="https://finder.cstone.space/" property="og:url"/>
+  <meta content="https://cstone.space/uifimages/_assets/cornerpreview.png" property="og:image:url"/>
+  <meta content="A tool for Star Citizen that will help you find any in game item." property="og:description"/>
+  <script async="" data-ad-client="ca-pub-9595587177776883" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js">
+  </script>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   Star Citizen - Armor pieces
+  </title>
+  <link href="https://cdn.datatables.net/v/bs/dt-1.11.5/b-2.2.2/r-2.2.9/sc-2.0.5/sl-1.3.4/datatables.min.css" rel="stylesheet" type="text/css">
+   <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js">
+   </script>
+   <script crossorigin="anonymous" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" src="https://code.jquery.com/jquery-3.7.1.min.js">
+   </script>
+   <script src="https://cdn.datatables.net/v/bs/dt-1.11.5/b-2.2.2/r-2.2.9/sc-2.0.5/sl-1.3.4/datatables.min.js" type="text/javascript">
+   </script>
+   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js">
+   </script>
+   <!-- Latest compiled and minified CSS -->
+   <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" rel="stylesheet"/>
+   <!-- Latest compiled and minified JavaScript -->
+   <script crossorigin="anonymous" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js">
+   </script>
+   <script src="https://cdn.jsdelivr.net/npm/fuzzysort@2.0.4/fuzzysort.min.js">
+   </script>
+   <script crossorigin="anonymous" integrity="sha512-qtX0GLM3qX8rxJN1gyDfcnMFFrKvixfoEOwbBib9VafR5vbChV5LeE5wSI/x+IlCkTY5ZFddFDCCfaVJJNnuKQ==" referrerpolicy="no-referrer" src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js">
+   </script>
+   <script>
+    // MATCH AND SORT FOR INPUT FORMS:
+
+        function matchCustom(params, data) {
+            // If there are no search terms, return all of the data
+            if ($.trim(params.term) === '') {
+                return data;
+            }
+
+            // Do not display the item if there is no 'text' property
+            if (typeof data.text === 'undefined') {
+                return null;
+            }
+
+            // `params.term` should be the term that is used for searching
+            // `data.text` is the text that is displayed for the data object
+            if (fuzzysort.single(params.term, data.text)) {
+                var result = fuzzysort.single(params.term, data.text);
+                var modifiedData = $.extend({}, data, true, result);
+                return modifiedData;
+            }
+
+            // Return `null` if the term should not be displayed
+            return null;
+        }
+
+        function sortCustom(data) {
+            if (typeof data[0].score === 'undefined') {
+                return data;
+            }
+            return data.sort(function (a, b) {
+                return b.score - a.score;
+            });
+        }
+   </script>
+   <style>
+    ::-webkit-scrollbar {
+            border-radius: 6px;
+            width: 10px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-button {
+            background-color: #313131;
+            border-radius: 6px;
+        }
+
+
+        ::-webkit-scrollbar-track-piece {
+            border-radius: 6px;
+            background-color: #212121;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            height: 50px;
+            background-color: #313131;
+            border-radius: 6px;
+        }
+
+        .patreon-widget {
+            position: absolute !important;
+            right: 0px !important;
+            height: 100px !important;
+            width: 176px !important;
+            margin-top: 10px !important;
+        }
+
+        .navbar-header {
+            position: relative;
+            width: 100%;
+        }
+
+        .back {
+            position: absolute;
+            right: 0px;
+            top: 7px;
+            background-color: #0d0d0d;
+            border-radius: 6px;
+            border: none;
+            color: #dddddd;
+            padding: 5px 7px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            margin: 3px;
+            box-shadow: 0px 2px 1px #191919
+        }
+
+            .back:hover {
+                background-color: #404040;
+                border-radius: 6px;
+                border: none;
+                color: #dddddd;
+                padding: 5px 7px;
+                text-align: center;
+                text-decoration: none;
+                font-size: 16px;
+                box-shadow: 0px 3px 0px #212121;
+            }
+
+        .blinking {
+            -webkit-animation: 3s blink ease infinite;
+            -moz-animation: 3s blink ease infinite;
+            -o-animation: 3s blink ease infinite;
+            animation: 3s blink ease infinite;
+        }
+
+        @keyframes blink {
+            from, to {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        @-moz-keyframes blink {
+            from, to {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        @-webkit-keyframes blink {
+            from, to {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        @-o-keyframes blink {
+            from, to {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .img-overlay-wrap {
+            position: relative;
+            display: inline-block;
+            transition: transform 150ms ease-in-out;
+        }
+
+            .img-overlay-wrap img {
+                max-width: 100%;
+                height: auto;
+            }
+
+            .img-overlay-wrap svg {
+                position: absolute;
+                top: 6px;
+                left: 14px;
+            }
+
+        .button.spec {
+            font-variant: normal;
+            font-size: 11px;
+            padding: 2px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 35px;
+            width: 125px;
+            margin: 3px;
+            box-shadow: 0px 2px 0px #212121;
+            background-color: #414141;
+            border-color: #313131;
+            border-style: solid;
+            border-width: 1px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+            .button.spec:hover {
+                height: 35px;
+                font-variant: normal;
+                font-size: 11px;
+                padding: 2px;
+                width: 125px;
+                height: 35px;
+                margin: 3px;
+                width: 125px;
+                box-shadow: 0px 0px 0px #212121;
+                background-color: #242424;
+                border-color: #212121;
+                border-style: solid;
+                border-width: 1px;
+                border-radius: 3px;
+                font-weight: 500;
+            }
+
+                .button.spec:hover:enabled {
+                    height: 35px;
+                    font-variant: normal;
+                    font-size: 11px;
+                    padding: 2px;
+                    width: 125px;
+                    height: 35px;
+                    margin: 3px;
+                    width: 125px;
+                    box-shadow: 0px 0px 0px #212121;
+                    background-color: #242424;
+                    border-color: #0d0d0d;
+                    border-style: solid;
+                    border-width: 1px;
+                    border-radius: 3px;
+                    font-weight: 500;
+                }
+
+        .back.spec {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+            color: #dddddd;
+            height: 35px;
+            font-variant: normal;
+            font-size: 11px;
+            padding: 2px;
+            width: 100px;
+            height: 35px;
+            padding: 1px;
+            width: 125px;
+            background-color: #414141;
+            border-color: #313131;
+            border-style: solid;
+            border-width: 1px;
+            border-radius: 3px;
+            font-weight: 500;
+            box-shadow: 0px 2px #212121;
+        }
+
+            .back.spec:hover {
+                height: 35px;
+                font-variant: normal;
+                font-size: 11px;
+                padding: 2px;
+                width: 125px;
+                height: 35px;
+                padding: 1px;
+                width: 125px;
+                background-color: #242424;
+                border-color: #212121;
+                border-style: solid;
+                border-width: 1px;
+                border-radius: 3px;
+                font-weight: 500;
+                box-shadow: 0px 0px #212121;
+            }
+
+        .buttonline {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap
+        }
+
+        .button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none !important;
+            color: #dddddd !important;
+            width: 160px;
+            border-radius: 6px;
+            text-align: center;
+            text-decoration: none;
+            font-variant: small-caps;
+            margin: 3px;
+            background-color: #414141;
+            border-width: 1px;
+            border-style: solid;
+            border-color: #313131 !important;
+            letter-spacing: 1px;
+            height: 40px;
+            font-size: 12px;
+            font-weight: 200;
+            padding: 5px;
+            box-shadow: 0px 2px #212121;
+        }
+
+            .button:hover {
+                width: 160px;
+                border-radius: 6px;
+                color: #dddddd;
+                text-align: center;
+                text-decoration: none;
+                font-variant: small-caps;
+                margin: 3px;
+                background-color: #242424;
+                border-width: 1px;
+                border-style: solid;
+                border-color: #212121 !important;
+                letter-spacing: 1px;
+                height: 40px;
+                font-size: 12px;
+                font-weight: 200;
+                padding: 5px;
+                box-shadow: 0px 0px #212121;
+            }
+
+        .dataTables_wrapper {
+            border-style: none !important;
+        }
+
+        input[type="text"] {
+            background-color: #414141 !important;
+        }
+
+            input[type="text"]:hover {
+                background-color: #515151 !important;
+            }
+
+        input[type="search"], textarea {
+            background-color: #414141 !important;
+        }
+
+            input[type="search"]:hover {
+                background-color: #515151 !important;
+            }
+
+
+        .pagination > li > a, .pagination > li > span {
+            background-color: #414141 !important;
+            box-shadow: 0PX 2PX #212121;
+        }
+
+        .pagination > .disabled > span, .pagination > .disabled > span:hover, .pagination > .disabled > span:focus, .pagination > .disabled > a, .pagination > .disabled > a:hover, .pagination > .disabled > a:focus {
+            background-color: #212121 !important;
+            box-shadow: 0PX 0PX #212121;
+        }
+
+        .pagination > .active > a, .pagination > .active > span, .pagination > .active > a:hover, .pagination > .active > span:hover, .pagination > .active > a:focus, .pagination > .active > span:focus {
+            background-color: #616161 !important;
+        }
+
+        .pagination > li > a:hover {
+            background-color: #212112 !important;
+            box-shadow: 0PX 0PX #212121;
+        }
+
+        .pricetab {
+            border-style: none !important;
+        }
+
+        .input-sm {
+            background-color: #414141 !important;
+        }
+
+            .input-sm:hover {
+                background-color: #515151 !important;
+            }
+
+        .modal-backdrop.in {
+            z-index: -1;
+        }
+
+        #searchTxtModal {
+            padding: 5px 7px;
+            width: 80%;
+            box-sizing: border-box;
+            max-width: 100%;
+            outline: none;
+            border-style: solid;
+            border-width: 1px;
+            border-color: #212121;
+            margin-top: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+            background-color: #414141;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: inset 0px 0px #212121;
+        }
+
+            #searchTxtModal:hover {
+                padding: 5px 7px;
+                width: 80%;
+                box-sizing: border-box;
+                max-width: 100%;
+                outline: none;
+                text-align: center;
+                background-color: #515151;
+                padding: 10px;
+                border-style: solid;
+                border-width: 1px;
+                border-color: #212121;
+                border-radius: 6px;
+                /*box-shadow: inset 0px 2px #212121;*/
+            }
+
+        /* The Modal (background) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content/Box */
+        .modal-content {
+            background-color: #212121;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #313131;
+            max-width: 1300px;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+
+        #list-items-nodes-modal {
+            width: 100%;
+            position: absolute;
+            max-height: 500px;
+            box-sizing: border-box;
+            overflow-y: scroll;
+            background-color: #212121;
+            margin-top: 5px;
+            border: 1px solid #0d0d0d;
+            border-radius: 6px;
+            box-shadow: 0 0 12px #212121;
+            z-index: 9;
+        }
+
+            #list-items-nodes-modal .node-item {
+                padding: 7px;
+                font-size: 1em;
+                box-sizing: border-box;
+                border-bottom: 1px solid #0d0d0d;
+                cursor: pointer;
+            }
+
+        .node-item {
+            text-align: center;
+        }
+
+            .node-item:active, .node-item:hover {
+                background-color: #313131;
+            }
+
+        ul li {
+            list-style: none;
+            margin: 0;
+            font-family: 'Red Hat Display', sans-serif;
+        }
+
+        ul {
+            padding: 0;
+            margin: 0;
+        }
+   </style>
+  </link>
+ </head>
+ <div b-cbo3goxb9u="" class="modal" id="searchModal">
+  <!-- Modal content -->
+  <div b-cbo3goxb9u="" class="modal-content" style="background-color: #313131;">
+   <div b-cbo3goxb9u="" style="font-size:13px">
+    <form id="searchFormModal">
+     <div b-cbo3goxb9u="" id="search-cont-modal" style="position: relative">
+      <input autocomplete="off" b-cbo3goxb9u="" disabled="" id="searchTxtModal" maxlength="90" placeholder="Initializing search..." style="margin:auto;width:100%" type="text"/>
+     </div>
+    </form>
+   </div>
+  </div>
+ </div>
+ <body id="mainBody" style="background-image: url('https://cstone.space/Media/350/Pattern_Dark.png'); background-color: #212121; color: #dddddd; cursor: default; font-family: 'Red Hat Display', sans-serif; padding-top: 30px;">
+  <div b-cbo3goxb9u="" class="navbar jumbotron navbar-inverse container-fluid body-content" style="background-color: #313131; box-shadow: 0 0 5px 1px #151515; border-radius: 6px; border-color: #313131; margin-left: calc(2% + 15px); margin-right: calc(2% + 15px); padding-top: 10px; padding-bottom: 30px; margin-bottom: 0px; margin-top: -10px">
+   <div b-cbo3goxb9u="" class="container-fluid">
+    <div b-cbo3goxb9u="" class="navbar-header" style="text-align:center">
+     <div b-cbo3goxb9u="" class="img-overlay-wrap">
+      <a b-cbo3goxb9u="" href="/">
+       <img b-cbo3goxb9u="" src="https://cstone.space/images/corner.png" width="128"/>
+      </a>
+     </div>
+     <br b-cbo3goxb9u=""/>
+     <br b-cbo3goxb9u=""/>
+     <div b-cbo3goxb9u="">
+      <a class="navbar-brand" href="/" onclick="clean();" style="color:#dddddd;float: none;letter-spacing: 6px;font-size: 14px;margin:0px;font-weight: 400;line-height: 0px;">
+       CORNERSTONE
+      </a>
+      <br b-cbo3goxb9u=""/>
+      <a class="navbar-brand" href="/" onclick="clean();" style="color:#dddddd;float: none;letter-spacing: 6px;font-size: 14px;margin:0px;font-weight: 400;line-height: 30px;">
+       UNIVERSAL ITEM FINDER
+      </a>
+     </div>
+     <button b-cbo3goxb9u="" class="back spec" id="SearchButton" onclick="SearchModal()" style="padding:7px;left: 38px; width: 36px; display:none">
+      <svg b-cbo3goxb9u="" height="20" viewbox="0,0,256,256" width="20" x="0px" xmlns="http://www.w3.org/2000/svg" y="0px">
+       <g b-cbo3goxb9u="" fill="#dddddd" fill-rule="nonzero" font-family="none" font-size="none" font-weight="none" stroke="none" stroke-dasharray="" stroke-dashoffset="0" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-width="1" style="mix-blend-mode: normal" text-anchor="none">
+        <g b-cbo3goxb9u="" transform="scale(3.55556,3.55556)">
+         <path b-cbo3goxb9u="" d="M31,11c-11.027,0 -20,8.973 -20,20c0,11.027 8.973,20 20,20c3.97417,0 7.67238,-1.17843 10.78906,-3.18555l12.9375,12.9375c1.664,1.664 4.36239,1.664 6.02539,0c1.664,-1.664 1.664,-4.36139 0,-6.02539l-12.9375,-12.9375c2.00712,-3.11668 3.18555,-6.8149 3.18555,-10.78906c0,-11.027 -8.973,-20 -20,-20zM31,19c6.616,0 12,5.384 12,12c0,6.616 -5.384,12 -12,12c-6.616,0 -12,-5.384 -12,-12c0,-6.616 5.384,-12 12,-12z">
+         </path>
+        </g>
+       </g>
+      </svg>
+     </button>
+     <button b-cbo3goxb9u="" class="back spec" id="Home1" onclick="window.location.href = '/'" style="left: -8px; width: 36px ">
+      <svg b-cbo3goxb9u="" style="padding:8px;filter: invert(97%) sepia(0%) saturate(0%) hue-rotate(228deg) brightness(93%) contrast(92%);" viewbox="0 0 576 512" xmlns="http://www.w3.org/2000/svg">
+       <path b-cbo3goxb9u="" d="M575.8 255.5c0 18-15 32.1-32 32.1h-32l.7 160.2c0 2.7-.2 5.4-.5 8.1V472c0 22.1-17.9 40-40 40H456c-1.1 0-2.2 0-3.3-.1c-1.4 .1-2.8 .1-4.2 .1H416 392c-22.1 0-40-17.9-40-40V448 384c0-17.7-14.3-32-32-32H256c-17.7 0-32 14.3-32 32v64 24c0 22.1-17.9 40-40 40H160 128.1c-1.5 0-3-.1-4.5-.2c-1.2 .1-2.4 .2-3.6 .2H104c-22.1 0-40-17.9-40-40V360c0-.9 0-1.9 .1-2.8V287.6H32c-18 0-32-14-32-32.1c0-9 3-17 10-24L266.4 8c7-7 15-8 22-8s15 2 21 7L564.8 231.5c8 7 12 15 11 24z">
+       </path>
+      </svg>
+     </button>
+     <a b-cbo3goxb9u="" class="back spec" href="/Favorites" id="favnav" style="right: 102px;width:75px">
+      Favorites
+     </a>
+     <a b-cbo3goxb9u="" class="back spec" href="/Contact" id="BContact" style="right:-8px;width:100px">
+      UIF Feedback
+     </a>
+     <div b-cbo3goxb9u="" style="padding-top: 5px; display: flex; justify-content: center; flex-wrap: wrap">
+      <a b-cbo3goxb9u="" class="button spec" href="https://cstone.space/" style="width:200px">
+       CORNERSTONE HOME
+      </a>
+      <a b-cbo3goxb9u="" class="button spec" href="https://survey.cstone.space/" style="width:200px">
+       PLANETARY SURVEY
+      </a>
+      <a b-cbo3goxb9u="" class="button spec" href="https://cstone.space/resources/knowledge-base" style="width:200px">
+       KNOWLEDGE BASE
+      </a>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div b-cbo3goxb9u="" class="container-fluid body-content" style="margin-left:2%;margin-right:2%">
+   <hr b-cbo3goxb9u="" style="background: linear-gradient(to right, transparent, transparent, transparent); height: 1px; border-width: 0px; margin-top: 15px; margin-bottom: 15px "/>
+   <style>
+    tbody > tr {
+        cursor: pointer;
+    }
+
+    table {
+        font-family: 'Red Hat Display', sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+
+    .input-sm {
+        height: 30px;
+        padding: 5px 10px;
+        margin-left: 5px;
+        font-size: 12px;
+        line-height: 1.5;
+        border-radius: 6px;
+        background-color: #313131;
+        border-color: #0d0d0d !important;
+        border-width: 1px !important;
+        color: #dddddd;
+    }
+
+    table.dataTable {
+        clear: both;
+        margin-top: 6px !important;
+        margin-bottom: 6px !important;
+        max-width: none !important;
+        border-collapse: collapse !important;
+    }
+
+    table {
+        font-family: 'Red Hat Display', sans-serif;
+        background-color: #313131;
+    }
+
+    .pagination > li > a, .pagination > li > span {
+        position: relative;
+        float: left;
+        padding: 6px 12px;
+        margin-left: 0px;
+        line-height: 1.5;
+        color: #dddddd !important;
+        text-decoration: none;
+        background-color: #313131;
+        border-color: #0d0d0d;
+        border-width: 1px;
+    }
+
+    .pagination > .disabled > span, .pagination > .disabled > span:hover, .pagination > .disabled > span:focus, .pagination > .disabled > a, .pagination > .disabled > a:hover, .pagination > .disabled > a:focus {
+        cursor: not-allowed;
+        background-color: #313131;
+        text-decoration: none;
+        border-color: #0d0d0d;
+        border-width: 1px;
+    }
+
+    .pagination > .active > a, .pagination > .active > span, .pagination > .active > a:hover, .pagination > .active > span:hover, .pagination > .active > a:focus, .pagination > .active > span:focus {
+        z-index: 3;
+        cursor: default;
+        background-color: #313131;
+        text-decoration: none;
+        border-color: #0d0d0d;
+        border-width: 1px;
+    }
+
+    .pagination > li > a:hover {
+        background-color: #0d0d0d;
+        text-decoration: none;
+        border-color: #0d0d0d;
+        border-width: 1px;
+    }
+
+    .pagination > li > a:focus {
+        outline: 0;
+        border-color: #0d0d0d;
+        border-width: 1px;
+    }
+
+    input[type="search"], textarea {
+        outline: none;
+        box-shadow: none !important;
+    }
+
+    select {
+        outline: none;
+        box-shadow: none !important;
+        border: 0px solid #ccc !important;
+    }
+
+    tr:nth-child(even) {
+        background-color: #313131;
+    }
+
+    td, th {
+        border: 0px solid #dddddd;
+        text-align: left;
+        padding: 10px;
+    }
+
+    .dataTables_wrapper {
+        border-width: 1px;
+        border-color: #0d0d0d;
+        border-style: solid;
+        border-radius: 6px;
+        padding: 10px;
+    }
+
+    tfoot > tr {
+        border-top: 1px solid #0d0d0d;
+    }
+
+    thead:nth-child(1) {
+        border-bottom: 1px solid #0d0d0d;
+    }
+
+    input[type="text"] {
+        padding: 5px;
+        border-style: solid;
+        width: 100%;
+        border-radius: 6px;
+        background-color: #313131;
+        border-color: #0d0d0d;
+        color: #dddddd;
+        border-width: 1px;
+    }
+
+    tbody > tr:hover {
+        background-color: #212121 !important;
+    }
+
+    table {
+        border-radius: 1px;
+    }
+
+    .mytooltip {
+        display: inline;
+        position: relative;
+        z-index: 999
+    }
+
+        .mytooltip .tooltip-item {
+            padding-right: 50px;
+            font-size: 18px;
+        }
+
+        .mytooltip .tooltip-content {
+            position: absolute;
+            z-index: 9999;
+            width: 360px;
+            left: 50%;
+            margin: 0px 0 20px -300px;
+            bottom: 100%;
+            
+            background: #424242;
+            border-radius: 6px;
+            opacity: 0;
+            box-shadow: 0px 0px 20px #212121;
+            cursor: default;
+            pointer-events: none;
+            border: 5px solid #424242;
+        }
+
+        .mytooltip:hover .tooltip-content {
+            pointer-events: auto;
+            opacity: 1;
+            -webkit-transform: translate3d(0, 0, 0) rotate3d(0, 0, 0, 0deg);
+            transform: translate3d(0, 0, 0) rotate3d(0, 0, 0, 0deg)
+        }
+   </style>
+   <div class="jumbotron" style="background-color: #313131;box-shadow: 0 0 5px 1px #151515; border-radius: 6px; text-align: center; margin-top:0px; margin-bottom:0px; padding-top:30px; padding-bottom:30px">
+    <h2 style="font-size: 20px;letter-spacing: 6px;margin-top:0px;">
+     WEARABLES: TORSOS!
+    </h2>
+    <p style="font-size: 14px;letter-spacing: 1px;font-variant: small-caps;margin: 0px;margin-bottom:10px;margin-top:25px">
+     HERE YOU CAN SEE ALL THE AVAILABLE ITEMS, CLICK ON THE ONE YOU LIKE.
+    </p>
+   </div>
+   <hr style="background: linear-gradient(to right, transparent, transparent, transparent); height: 1px; border-width: 0px; margin-top: 15px; margin-bottom: 15px "/>
+   <div class="row" style="background-color:#313131;box-shadow: 0 0 5px 1px #151515; border-radius: 6px; margin: 0px; padding-top: 30px; padding-bottom:30px">
+    <div class="col-md-12" id="TQtDiv">
+     <table class="display table-hover" id="table" style="width:100%">
+      <thead>
+       <tr>
+        <th>
+         id
+        </th>
+        <th>
+         sold
+        </th>
+        <th>
+         Name
+        </th>
+        <th>
+         Type
+        </th>
+        <th>
+         Damage reduction
+        </th>
+        <th>
+         Min temp (°C)
+        </th>
+        <th>
+         Max temp (°C)
+        </th>
+        <th>
+         Radiation Resistnace (REM)
+        </th>
+        <th>
+         Radiation Scrub Rate (REM/s)
+        </th>
+        <th>
+         Capacity (μSCU)
+        </th>
+        <th>
+         Volume (μSCU)
+        </th>
+        <th>
+         Image
+        </th>
+       </tr>
+      </thead>
+      <tfoot>
+       <tr>
+        <th>
+         id
+        </th>
+        <th>
+         sold
+        </th>
+        <th>
+         Name
+        </th>
+        <th>
+         Type
+        </th>
+        <th>
+         Damage reduction
+        </th>
+        <th>
+         Min temp (°C)
+        </th>
+        <th>
+         Max temp (°C)
+        </th>
+        <th>
+         Radiation Resistnace (REM)
+        </th>
+        <th>
+         Radiation Scrub Rate (REM/s)
+        </th>
+        <th>
+         Capacity (μSCU)
+        </th>
+        <th>
+         Volume (μSCU)
+        </th>
+        <th>
+         Image
+        </th>
+       </tr>
+      </tfoot>
+     </table>
+    </div>
+   </div>
+   <hr style="background: linear-gradient(to right, transparent, transparent, transparent); height: 1px; border-width: 0px; margin-top: 15px; margin-bottom: 15px "/>
+   <div class="row" style="background-color:#313131;box-shadow: 0 0 5px 1px #151515; border-radius: 6px; margin:0px; padding: 15px">
+    <div class="col-md-12" style="text-align:center; padding:15px">
+     <script async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js">
+     </script>
+     <!-- Ad_FPSArmor -->
+     <ins class="adsbygoogle" data-ad-client="ca-pub-9595587177776883" data-ad-format="auto" data-ad-slot="8879365941" data-full-width-responsive="true" style="display:block">
+     </ins>
+     <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+     </script>
+    </div>
+   </div>
+   <script>
+    $(document).ready(function () {
+
+        $('#table thead tr').clone(true).appendTo('#table thead');
+        $('#table thead tr:eq(1) th').each(function (i) {
+            var title = $(this).text();
+            $(this).html('<input type="text" placeholder="Filter ' + title + '" />');
+
+            $('input', this).on('keyup change', function () {
+                if (table.column(i).search() !== this.value) {
+                    table
+                        .column(i)
+                        .search(this.value)
+                        .draw();
+                }
+            });
+        });
+
+        var table = $('#table').DataTable({
+            orderCellsTop: true,
+            stateSave: true,
+            search: { regex: true },
+            ajax: {
+                url: '/GetArmors/' + "Torsos",
+                dataSrc: ''
+            },
+            columns: [{ data: "ItemId", "visible": false }, { data: "Sold", "visible": false }, { data: "Name" }, { data: "Atype" }, { data: "Dmgred", "render": function (data, type, row, meta) { if (!data) { return "n/a"; } else { return (data*100) + "%"; } } }, { data: "Wearmintemp" }, { data: "Wearmaxtemp" }, { data: "Radresistance" }, { data: "Radscrubrate" }, { data: "Acargo" }, { data: "Volume" }, { data: "ItemId", "render": function (data, type, row, meta) { return '<div class="mytooltip"><div class="imgitem" style="width:100%"><div style="width:100%" class="tooltip-item">❐</div><div class="tooltip-content"><img class="imgo"></div></div></div>'; } }],
+            language: {
+                searchPlaceholder: "(item|item) to compare", lengthMenu: "Display _MENU_ items"
+            },
+            createdRow: function (row, data, dataIndex) {
+                if (data["Sold"] == 0) {
+                    $(row).css('color', '#888888');
+                }
+            },
+            scrollX: false,
+            drawCallback: function () {
+
+                $(".imgitem").mouseenter(function () {
+                    var id = table.cell(this.parentNode.parentNode).data();
+                    $(this).find("img.imgo").replaceWith('<img onerror="this.onerror=null; this.src=\'https://cstone.space/uifimages/_assets/soon.jpg\'" style="width:100%;border-radius:6px;" src="https://cstone.space/uifimages/' + id + '.png">');
+                });
+            }
+        });
+
+        table.columns(1).search("", false, false, true).draw(); $(".dataTables_length").parent().parent().append('<div style="text-align: center;"><text style="font-size:14px;padding-left: 20px;font-variant: all-small-caps;">CTRL+Click on any row to open the item in a new tab</text><br><div class="buttonline"><button id="hidenonsold" style="padding: 10px;margin-top: 15px;width: 80%;" class="button spec">TOGGLE ITEMS NOT SOLD IN GAME (GREY)</button></div><br></div>'); $("#hidenonsold").click(function () {
+            if (toggle == 0) {toggle = 1;table.columns(1).search("1", false, false, true).draw();} else {toggle = 0;table.columns(1).search("", false, false, true).draw();}
+        });
+
+        var toggle = 0; $('#table th input').val('').change();
+
+        $('#table tbody').on('click', 'tr', function () {
+            if (cntrlIsPressed == false) {
+                window.location.href = "FPSArmors1/" + table.row(this).data().ItemId;
+            }
+
+        });
+
+        $(document).keydown(function (event) {
+            if (event.which == "17")
+                cntrlIsPressed = true;
+        });
+
+        $(document).keyup(function () {
+            cntrlIsPressed = false;
+        });
+
+        var cntrlIsPressed = false;
+
+        $('#table tbody').on('click', 'tr', function () {
+            if (cntrlIsPressed == true) {
+                window.open("FPSArmors1/" + table.row(this).data().ItemId);
+            }
+
+        });
+
+    });
+   </script>
+   <hr b-cbo3goxb9u="" style="background: linear-gradient(to right, transparent, transparent, transparent); height: 1px; border-width: 0px; margin-top: 15px; margin-bottom: 15px "/>
+   <footer b-cbo3goxb9u="" style="color:#dddddd; position:relative">
+    <div b-cbo3goxb9u="" class="jumbotron container-fluid" style="background-color: #313131;box-shadow: 0 0 5px 1px #151515; border-radius: 6px; text-align: center; margin-top:0px; margin-bottom:0px; padding-top:30px; padding-bottom:10px">
+     <div b-cbo3goxb9u="" class="row" style="padding:15px">
+      <div b-cbo3goxb9u="" class="col-md-6" style="text-align: left;margin-bottom:15px;">
+       New to Star Citizen? Use my referal code when registering:
+       <b b-cbo3goxb9u="">
+        <a b-cbo3goxb9u="" href="https://robertsspaceindustries.com/enlist?referral=STAR-KH2J-JKT7">
+         STAR-KH2J-JKT7
+        </a>
+       </b>
+       <br b-cbo3goxb9u=""/>
+       You will get additional
+       <b b-cbo3goxb9u="">
+        5,000 UEC
+       </b>
+       that you can use in in-game stores!
+       <br b-cbo3goxb9u=""/>
+       <br b-cbo3goxb9u=""/>
+       All profits generated by this tool go towards it's upkeep and development.
+      </div>
+      <div b-cbo3goxb9u="" class="col-md-6" style="text-align: right;margin-bottom:15px">
+       <div b-cbo3goxb9u="">
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" style="position: relative;" target="_top">
+         <text b-cbo3goxb9u="" style="color:#ffc439;position: relative;width: 250px;right: 7px;top:-7px">
+          Please, help keep this page running:
+         </text>
+         <input b-cbo3goxb9u="" name="cmd" type="hidden" value="_donations"/>
+         <input b-cbo3goxb9u="" name="business" type="hidden" value="SKP3JA5XM4S5W"/>
+         <input b-cbo3goxb9u="" name="item_name" type="hidden" value="Website upkeep :)"/>
+         <input b-cbo3goxb9u="" name="currency_code" type="hidden" value="USD"/>
+         <input alt="Donate with PayPal button" b-cbo3goxb9u="" border="0" name="submit" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" title="PayPal - The safer, easier way to pay online!" type="image"/>
+        </form>
+       </div>
+       <div b-cbo3goxb9u="">
+        <text b-cbo3goxb9u="" style=" color: #e85b46; position: relative; width: 250px; right: 140px; top: 20px;">
+         Join other Patreons:
+        </text>
+        <div b-cbo3goxb9u="" style="position: relative;">
+         <a b-cbo3goxb9u="" data-patreon-widget-type="become-patron-button" href="https://www.patreon.com/bePatron?u=28882919" style="background: #e85b46; padding: 10px; border-radius: 6px; color: #ffffff; font-weight: 500; ">
+          Become a Patron!
+         </a>
+        </div>
+       </div>
+      </div>
+     </div>
+     <br b-cbo3goxb9u=""/>
+    </div>
+    <hr b-cbo3goxb9u="" style="background: linear-gradient(to right, transparent, transparent, transparent); height: 1px; border-width: 0px; margin-top: 15px; margin-bottom: 15px "/>
+    <div b-cbo3goxb9u="" class="jumbotron" style="background-color: #313131;box-shadow: 0 0 5px 1px #151515; border-radius: 6px; text-align: center; margin-top:0px; margin-bottom:0px; padding-top:30px; padding-bottom:30px">
+     <div b-cbo3goxb9u="" style="text-align:center">
+      Star Citizen intellectual property, content and trademarks are owned by Cloud Imperium Games Corporation and its subsidiaries.
+     </div>
+     <br b-cbo3goxb9u=""/>
+     <div b-cbo3goxb9u="" style="text-align:center;margin-left: auto; margin-right: auto;">
+      This is an unofficial Star Citizen fansite, not affiliated with the Cloud Imperium group of companies.
+      <br b-cbo3goxb9u=""/>
+      All content on this site not authored by its host or users are property of their respective owners.
+     </div>
+     <br b-cbo3goxb9u=""/>
+     <div b-cbo3goxb9u="" style="text-align:center">
+      Official StarCitizen/RSI website:
+      <a b-cbo3goxb9u="" href="https://robertsspaceindustries.com/">
+       https://robertsspaceindustries.com/
+      </a>
+     </div>
+     <br b-cbo3goxb9u=""/>
+     <div b-cbo3goxb9u="" style="text-align:center">
+      © 2025 - Universal Item Finder made by Meepowski.
+     </div>
+     <br b-cbo3goxb9u=""/>
+     <div b-cbo3goxb9u="" id="mbtc" style="text-align:center">
+      <img b-cbo3goxb9u="" id="imgmbtc" src="" width="125"/>
+     </div>
+     <script>
+      var vis = 0;
+
+                    $.fn.isInViewport = function () {
+                        let elementTop = $(this).offset().top;
+                        let elementBottom = elementTop + $(this).outerHeight();
+
+                        let viewportTop = $(window).scrollTop();
+                        let viewportBottom = viewportTop + $(window).height();
+
+                        return elementBottom > viewportTop && elementTop < viewportBottom;
+                    };
+
+                    // if ("https://finder.cstone.space/" != window.location.href) {
+                    //     $("#BBack1").show();
+                    // } else {
+                    //     $("#BBack1").hide();
+                    // }
+
+                    if ("https://finder.cstone.space/" != window.location.href) {
+                        $("#SearchButton").show();
+                    } else {
+                        $("#SearchButton").hide();
+                    }
+
+                    if ("https://finder.cstone.space/" != window.location.href) {
+                        $("#Home1").show();
+                    } else {
+                        $("#Home1").hide();
+                    }
+
+                    $(document).on('keyup', function (e) {
+                        if (e.key == "Escape") $('#searchModal').modal('hide');
+                    });
+
+                    $(document).on('keydown', function (e) {
+                        if (e.ctrlKey && e.keyCode == 75) {
+                            if ("https://finder.cstone.space/" != window.location.href) {
+                                SearchModal();
+                                e.preventDefault();
+                            } else {
+                                setTimeout(function () { $("#searchTxt").trigger('focus'); }, 100);
+                                e.preventDefault();
+                            }
+                        }
+                    });
+
+                    var initialized = 0;
+
+                    function SearchModal() {
+
+                        $('#searchModal').modal('show');
+                        
+                        if (initialized == 0) {
+
+                            $.getJSON("/GetSearch", function (json) {
+                                data = json;
+                                $("#searchTxtModal").attr("placeholder", "Search for any item...");
+                                $("#searchTxtModal").removeAttr('disabled');
+                                setTimeout(function () { $("#searchTxtModal").trigger('focus'); }, 100);
+                            });
+                            initialized = 1;
+                        }
+
+                        $('#searchTxtModal').unbind('keyup').bind('keyup', function (e) {
+                            e.preventDefault();
+                            var q = $(this).val();
+                            substringMatcher(q, data);
+                            if ($('#searchTxtModal').val().length == 0) {
+                                $('#list-items-nodes-modal').remove();
+                            }
+                        });
+
+                        function substringMatcher(q, strs) {
+                            var matches, substrRegex;
+                            // an array that will be populated with substring matches
+                            matches = [];
+                            // iterate through the pool of strings and for any string that
+                            if (q.length == 0) {
+                                return;
+                            }
+                            // contains the substring `q`, add it to the `matches` array
+                            $.each(strs, function (i, str) {
+                                if (fuzzysort.single(q, str.name)) {
+                                    var result = fuzzysort.single(q, str.name);
+                                    if (result.score > -25000) {
+                                        // the typeahead jQuery plugin expects suggestions to a
+                                        // JavaScript object, refer to typeahead docs for more info
+                                        matches.push({ value: str.name, id: str.id, sold: str.Sold, score: result.score });
+                                    }
+                                }
+                            });
+                            createUI(matches.sort(function (a, b) { return b.score - a.score; }));
+                        }
+
+                        $(document).on('click', 'body *', function (event) {
+                            if (!$(this).hasClass("node-item")) {
+                                console.log($(this));
+                                $("#searchTxtModal").val("");
+                                $('#list-items-nodes-modal').remove();
+                            }
+                            event.stopPropagation();
+                        });
+
+                        $(document).keyup(function (e) {
+                            if (e.key === "Escape") { // escape key maps to keycode `27`
+                                $("#searchTxtModal").val("");
+                                $('#list-items-nodes-modal').remove();
+                            }
+                        });
+
+                        function createUI(matches) {
+                            if ($('#list-items-nodes-modal').length != 0) {
+                                $('#list-items-nodes-modal').remove();
+                            }
+                            var html = '';
+                            if (matches && matches.length > -1) {
+                                html += '<ul id="list-items-nodes-modal">';
+                                for (var l in matches) {
+
+                                    //var temp = ""
+
+                                    //if (matches[l]['value'].includes("(Buy)")) {
+                                    //    temp = "(Buy)";
+                                    //} else if (matches[l]['value'].includes("(Rent)")) {
+                                    //    temp = "(Rent)";
+                                    //}
+                                    if (matches[l]['sold'] == 1) {
+                                        html += '<a style="color:#dddddd;text-decoration: none;" href="/Search/' + matches[l]['id']/* + '|||' + temp*/ + '">' + '<li class="node-item" id="' + matches[l]['id'] + '">' + matches[l]['value'] + '</li>' + "</a>";
+                                    } else {
+                                        html += '<a style="color:#999999;text-decoration: none;" href="/Search/' + matches[l]['id']/* + '|||' + temp*/ + '">' + '<li class="node-item" id="' + matches[l]['id'] + '">' + matches[l]['value'] + '</li>' + "</a>";
+                                    }
+                                }
+                                html += '</ul>';
+                                $('#search-cont-modal').append(html);
+                                //$('.node-item').on('click', function () {
+                                //    var id = $(this)[0].id;
+                                //    $('#searchTxt').attr('itemId', id);
+                                //    $('#list-items-nodes').remove();
+
+                                //    var temp = ""
+
+                                //    if ($("#searchTxt").val().includes("(Buy)")) {
+                                //        temp = "(Buy)";
+                                //    } else if ($("#searchTxt").val().includes("(Rent)")) {
+                                //        temp = "(Rent)";
+                                //    }
+
+                                //    var data = $("#searchTxt").attr('itemId') + "|||" + temp;
+                                //    window.location.href = '/Search/' + data;
+                                //});
+                            } else {
+                                $('#list-items-nodes-modal').remove();
+                            }
+                        }
+
+                    };
+
+                    $(window).scroll(function () {
+                        if ($('#mbtc').isInViewport()) {
+                            if (vis == 0) {
+                                vis = 1;
+                                $("#imgmbtc").attr("src", "https://cstone.space/uifimages/_assets/MadeByTheCommunity_White.png");
+                            };
+                        }
+                    });
+     </script>
+    </div>
+   </footer>
+  </div>
+ </body>
+</html>
