@@ -50,10 +50,49 @@ class API:
     def add_item(self, name, item_type=None, image_url=None, notes=None, initial_count=1):
         """Add item to inventory
         
+        NEUE LOGIK (dein Wunsch): 
+        - Wenn das Item schon in der DB ist → sofort count + initial_count (kein CStone, blitzschnell)
+        - Nur wenn wirklich neu → scrape von CStone und download Image
+        
         Args:
             initial_count: Starting count for new items (default 1, use 0 for imports)
         """
-        # Download and cache image regardless of initial_count
+        # 1. Zuerst prüfen, ob das Item schon lokal existiert
+        existing_item = self.operations.get_item_by_name(name)
+        
+        if existing_item:
+            # Schon da → nur count erhöhen (super schnell!)
+            new_count = existing_item.get('count', 0) + initial_count
+            update_result = self.operations.update_count(name, new_count)
+            if update_result['success']:
+                updated_item = self.operations.get_item_by_name(name)
+                if updated_item and updated_item.get('image_path'):
+                    updated_item['icon_url'] = self._get_icon_url(updated_item['image_path'])
+                    updated_item['thumb_url'] = self._get_thumb_url(updated_item['image_path'])
+                    updated_item['full_url'] = self._get_full_url(updated_item['image_path'])
+                return {'success': True, 'item': updated_item, 'source': 'local'}
+            return update_result
+        
+        # 2. Nur wenn wirklich neu → scrape von CStone (wie vorher)
+        # Zuerst Item-Daten holen (falls nicht gegeben)
+        if not image_url or not item_type:
+            search_results = self.scraper.search_item(name)
+            if not search_results:
+                return {'success': False, 'error': 'Item nicht gefunden bei CStone'}
+            
+            # Nehmen wir das erste passende Resultat
+            matching_result = next((r for r in search_results if r['name'].lower() == name.lower()), None)
+            if not matching_result:
+                return {'success': False, 'error': 'Kein exakter Match bei CStone'}
+            
+            item_url = matching_result.get('url')
+            if item_url:
+                image_url = self.scraper.get_item_image(item_url)
+            
+            # Item-Type könnte aus search kommen, falls verfügbar
+            # (angenommen, search_results geben 'type' zurück – falls nicht, lass es None)
+        
+        # Download and cache image (nur wenn neu und URL da)
         image_path = None
         if image_url:
             print(f"  Processing image for '{name}': {image_url}")
@@ -103,7 +142,7 @@ class API:
                 item_data['icon_url'] = self._get_icon_url(item_data['image_path'])
                 item_data['thumb_url'] = self._get_thumb_url(item_data['image_path'])
                 item_data['full_url'] = self._get_full_url(item_data['image_path'])
-            return {'success': True, 'item': item_data}
+            return {'success': True, 'item': item_data, 'source': 'cstone'}
         
         return result
     
@@ -369,9 +408,9 @@ class API:
                 image_url = None
                 
                 if link:
-                    item_url = link.get('href')
-                    if item_url and not item_url.startswith('http'):
-                        item_url = f"https://finder.cstone.space{item_url}"
+                    link = link.get('href')
+                    if link and not link.startswith('http'):
+                        item_url = f"https://finder.cstone.space{link}"
                     
                     # Extract item ID from URL for image
                     if item_url:
@@ -438,4 +477,4 @@ class API:
     
     def close(self):
         """Close database connection"""
-        self.db.close()
+        self.db.close() 
