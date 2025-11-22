@@ -29,35 +29,45 @@
             </div>
         </header>
 
-        <!-- Search Section -->
-        <section class="search-section">
-            <h2>🔍 <span data-i18n="search">Suche</span></h2>
-            <div class="search-controls">
-                <input type="text" id="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Suche Items...">
-                <div class="search-limit-wrapper">
-                    <label data-i18n="searchLimit">Ergebnisse zeigen:</label>
-                    <select id="search-limit">
-                        <option value="10">10</option>
-                        <option value="25" selected>25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="999" data-i18n="categoryAll">Alle</option>
-                    </select>
-                </div>
-            </div>
-            <div id="search-results" class="search-results hidden"></div>
-            <div id="item-preview" class="item-preview hidden">
-                <h3 id="preview-name"></h3>
-                <p id="preview-type"></p>
-                <img id="preview-image" src="" alt="Preview">
-                <button id="add-button" data-i18n="add">Hinzufügen</button>
-            </div>
+        <!-- VIEW NAVIGATION -->
+        <section class="view-navigation">
+            <button id="view-btn-inventory" class="view-btn active">📦 <span data-i18n="inventory">Inventar</span></button>
+            <button id="view-btn-gearsets" class="view-btn">🎯 Gear Sets</button>
         </section>
 
-        <!-- Inventory Section -->
-        <section class="inventory-section">
+        <!-- MAIN CONTENT AREA (wird gewechselt) -->
+        <div id="main-content">
+            <!-- Inventar View -->
+            <div id="inventory-view" class="content-view active">
+                <!-- Search Section -->
+                <section class="search-section">
+                    <h2>🔍 <span data-i18n="search">Suche</span></h2>
+                    <div class="search-controls">
+                        <input type="text" id="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Suche Items...">
+                        <div class="search-limit-wrapper">
+                            <label data-i18n="searchLimit">Ergebnisse zeigen:</label>
+                            <select id="search-limit">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="999" data-i18n="categoryAll">Alle</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="search-results" class="search-results hidden"></div>
+                    <div id="item-preview" class="item-preview hidden">
+                        <h3 id="preview-name"></h3>
+                        <p id="preview-type"></p>
+                        <img id="preview-image" src="" alt="Preview">
+                        <button id="add-button" data-i18n="add">Hinzufügen</button>
+                    </div>
+                </section>
+
+                <!-- Inventory Section -->
+                <section class="inventory-section">
             <div class="inventory-header">
-                <h2>📦 <span data-i18n="inventory">Inventar</span></h2>
+                <!-- H2 ENTFERNT -->
                 
                 <!-- NEW: Button-based Controls -->
                 <div class="inventory-controls-wrapper">
@@ -100,6 +110,46 @@
                 <p style="text-align: center; color: #888;" data-i18n="inventoryEmpty">Lade Inventar...</p>
             </div>
         </section>
+            </div>
+            <!-- Ende Inventar View -->
+
+            <!-- Gear Sets View -->
+            <div id="gearsets-view" class="content-view">
+                <section class="gearsets-section">
+                    <!-- Sticky Header -->
+                    <div class="gearsets-header">
+                        <!-- H2 ENTFERNT -->
+                        
+                        <!-- Set Selector Buttons -->
+                        <div class="gearsets-selector">
+                            <h3 class="control-title">🎯 Set auswählen:</h3>
+                            <div id="set-buttons" class="set-buttons-grid">
+                                <button class="set-btn active" data-set="ADP">ADP</button>
+                                <!-- Buttons werden dynamisch geladen -->
+                                <button class="set-btn set-btn-all" data-set="ALL">🌐 Alle Sets</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Filter Buttons -->
+                        <div class="gearsets-filter">
+                            <button class="filter-btn active" data-filter="all">Alle</button>
+                            <button class="filter-btn" data-filter="none">🔴 None (0/4)</button>
+                            <button class="filter-btn" data-filter="1">🔵 1/4</button>
+                            <button class="filter-btn" data-filter="2">🔵 2/4</button>
+                            <button class="filter-btn" data-filter="3">🔵 3/4</button>
+                            <button class="filter-btn" data-filter="all-parts">🟢 ALL (4/4)</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Gear Sets Grid (scrollbar) -->
+                    <div id="gearsets-grid" class="gearsets-grid">
+                        <p style="text-align: center; color: #888;">Lade Gear Sets...</p>
+                    </div>
+                </section>
+            </div>
+            <!-- Ende Gear Sets View -->
+        </div>
+        <!-- Ende Main Content -->
 
         <!-- Stats Section -->
         <section class="stats-section">

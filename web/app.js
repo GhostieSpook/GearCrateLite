@@ -5,6 +5,12 @@ let currentItem = null;
 let searchTimeout = null;
 let selectedItemForModal = null;
 let searchCache = {};
+let gearSetsCache = null;
+let currentView = localStorage.getItem('currentView') || 'inventory';
+let currentGearSetsFilter = 'all';
+let currentSelectedSet = 'ADP';
+let loadedSets = {}; // Speichert geladene Sets
+
 // ÄNDERUNG 1: Initialwerte aus localStorage laden
 let currentSortBy = localStorage.getItem('sortBy') || 'name';
 let currentSortOrder = localStorage.getItem('sortOrder') || 'asc';
@@ -15,6 +21,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // NEU: Anwendung der geladenen Einstellungen auf die UI
     applySavedSettingsToUI();
     
+    // View-Switching einrichten
+    setupViewSwitching();
+    
+    // Gespeicherte Ansicht laden
+    switchToView(currentView);
+    
     loadInventory();
     loadStats();
     // loadCategories muss NACH applySavedSettingsToUI laufen, 
@@ -23,7 +35,567 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     loadSearchLimit();
     setupKeyboardShortcuts();
+    setupStickyHeaderScrolling(); // NEU: Scroll-Detection für Compact-Modus
 });
+
+// VIEW SWITCHING SYSTEM
+function setupViewSwitching() {
+    const inventoryBtn = document.getElementById('view-btn-inventory');
+    const gearsetsBtn = document.getElementById('view-btn-gearsets');
+    
+    inventoryBtn.addEventListener('click', () => switchToView('inventory'));
+    gearsetsBtn.addEventListener('click', () => switchToView('gearsets'));
+}
+
+function switchToView(view) {
+    currentView = view;
+    localStorage.setItem('currentView', view);
+    
+    // Buttons updaten
+    const inventoryBtn = document.getElementById('view-btn-inventory');
+    const gearsetsBtn = document.getElementById('view-btn-gearsets');
+    
+    inventoryBtn.classList.remove('active');
+    gearsetsBtn.classList.remove('active');
+    
+    // Views updaten
+    const inventoryView = document.getElementById('inventory-view');
+    const gearsetsView = document.getElementById('gearsets-view');
+    
+    inventoryView.classList.remove('active');
+    gearsetsView.classList.remove('active');
+    
+    if (view === 'inventory') {
+        inventoryBtn.classList.add('active');
+        inventoryView.classList.add('active');
+    } else if (view === 'gearsets') {
+        gearsetsBtn.classList.add('active');
+        gearsetsView.classList.add('active');
+        
+        // Gear Sets laden wenn noch nicht gecached
+        if (!gearSetsCache) {
+            loadGearSets();
+        } else {
+            // NEU: Prüfe invalidierte Sets und lade sie neu
+            reloadInvalidatedSets();
+        }
+    }
+}
+
+// NEU: Lade alle invalidierten Sets neu beim View-Wechsel
+async function reloadInvalidatedSets() {
+    if (currentSelectedSet === 'ALL') {
+        // "Alle Sets" View: Prüfe welche Sets fehlen
+        const invalidatedSets = [];
+        
+        // Gehe durch gearSetsCache und prüfe welche nicht in loadedSets sind
+        gearSetsCache.forEach(setInfo => {
+            if (setInfo.variant_count > 0 && !loadedSets[setInfo.set_name]) {
+                invalidatedSets.push(setInfo.set_name);
+            }
+        });
+        
+        if (invalidatedSets.length > 0) {
+            console.log(`🔄 Lade ${invalidatedSets.length} invalidierte Sets neu...`);
+            for (const setName of invalidatedSets) {
+                await loadSingleSet(setName);
+            }
+        }
+        
+        displayGearSets();
+    } else if (currentSelectedSet) {
+        // Einzelnes Set: Prüfe ob es fehlt
+        if (!loadedSets[currentSelectedSet]) {
+            console.log(`🔄 Set ${currentSelectedSet} wurde invalidiert, lade neu...`);
+            await loadSingleSet(currentSelectedSet);
+        }
+        
+        displayGearSets();
+    }
+}
+
+// GEAR SETS LADEN
+async function loadGearSets() {
+    try {
+        const grid = document.getElementById('gearsets-grid');
+        grid.innerHTML = '<p style="text-align: center; color: #888;">Lade Gear Sets...</p>';
+        
+        // Hole alle Sets vom Server (nur die Liste!)
+        const response = await fetch('/api/get_all_gear_sets');
+        const data = await response.json();
+        
+        if (!data.success) {
+            grid.innerHTML = '<p style="text-align: center; color: #f44;">Fehler beim Laden!</p>';
+            return;
+        }
+        
+        gearSetsCache = data.sets;
+        
+        // Fülle Buttons mit Set-Namen
+        populateSetButtons(gearSetsCache);
+        
+        // Lade NUR ADP beim Start
+        await loadSingleSet('ADP');
+        
+        setupGearSetsControls();
+        displayGearSets();
+        
+    } catch (error) {
+        console.error('Error loading gear sets:', error);
+        const grid = document.getElementById('gearsets-grid');
+        grid.innerHTML = '<p style="text-align: center; color: #f44;">Fehler beim Laden!</p>';
+    }
+}
+
+// BUTTONS MIT SET-NAMEN FÜLLEN
+function populateSetButtons(sets) {
+    const container = document.getElementById('set-buttons');
+    const allButton = container.querySelector('.set-btn-all'); // Sichere den "Alle Sets" Button
+    
+    container.innerHTML = ''; // Leer machen
+    
+    // Füge jeden Set-Namen als Button hinzu
+    sets.forEach(set => {
+        if (set.variant_count > 0) {
+            const btn = document.createElement('button');
+            btn.className = 'set-btn';
+            
+            // ADP ist am Anfang aktiv
+            if (set.set_name === 'ADP') {
+                btn.classList.add('active');
+            }
+            
+            btn.dataset.set = set.set_name;
+            btn.textContent = `${set.set_name} (${set.variant_count})`;
+            container.appendChild(btn);
+        }
+    });
+    
+    // "Alle Sets" Button wieder ans Ende setzen
+    if (allButton) {
+        container.appendChild(allButton);
+    }
+}
+
+// LADE NUR EIN EINZIGES SET
+async function loadSingleSet(setName) {
+    // Schon geladen? Dann nicht nochmal!
+    if (loadedSets[setName]) {
+        console.log(`✨ ${setName} schon geladen!`);
+        return;
+    }
+    
+    const grid = document.getElementById('gearsets-grid');
+    grid.innerHTML = '<p style="text-align: center; color: #888;">Lade ' + setName + '...</p>';
+    
+    // Finde das Set in der Liste
+    const setInfo = gearSetsCache.find(s => s.set_name === setName);
+    if (!setInfo) return;
+    
+    const variants = [];
+    
+    // Lade ALLE Farben von diesem Set
+    for (const variant of setInfo.variants) {
+        try {
+            const response = await fetch(`/api/get_gear_set_details?set_name=${encodeURIComponent(setName)}&variant=${encodeURIComponent(variant)}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                variants.push(data.set);
+            }
+        } catch (error) {
+            console.error(`Fehler bei ${setName} ${variant}:`, error);
+        }
+    }
+    
+    // Speichere die geladenen Varianten
+    loadedSets[setName] = variants;
+    
+    console.log(`✅ ${setName} geladen: ${variants.length} Farben`);
+}
+
+// LADE ALLE SETS (für "Alle Sets" Button)
+async function loadAllSets() {
+    const grid = document.getElementById('gearsets-grid');
+    grid.innerHTML = '<p style="text-align: center; color: #888;">Lade alle Sets... Das kann etwas dauern!</p>';
+    
+    // Gehe durch alle Sets
+    for (const set of gearSetsCache) {
+        if (set.variant_count === 0) continue;
+        
+        // Lade nur wenn noch NICHT geladen
+        if (!loadedSets[set.set_name]) {
+            await loadSingleSet(set.set_name);
+        }
+    }
+    
+    console.log('✅ Alle Sets geladen!');
+}
+
+// CONTROLS EINRICHTEN (Buttons + Filter)
+function setupGearSetsControls() {
+    // Set-Buttons
+    const setButtons = document.querySelectorAll('.set-btn');
+    setButtons.forEach(btn => {
+        btn.addEventListener('click', async function() {
+            // Alle Buttons: nicht aktiv
+            setButtons.forEach(b => b.classList.remove('active'));
+            // Dieser Button: aktiv!
+            this.classList.add('active');
+            
+            currentSelectedSet = this.dataset.set;
+            
+            // Spezial-Fall: "Alle Sets"
+            if (currentSelectedSet === 'ALL') {
+                await loadAllSets();
+            } else {
+                // Normales Set: Lade das Set (falls noch nicht geladen)
+                await loadSingleSet(currentSelectedSet);
+            }
+            
+            // Zeige es an
+            displayGearSets();
+        });
+    });
+    
+    // Filter Buttons
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            currentGearSetsFilter = this.dataset.filter;
+            displayGearSets();
+        });
+    });
+}
+
+// GEAR SETS ANZEIGEN
+function displayGearSets() {
+    const grid = document.getElementById('gearsets-grid');
+    grid.innerHTML = '';
+    
+    let variants = [];
+    
+    // Spezial-Fall: "Alle Sets"
+    if (currentSelectedSet === 'ALL') {
+        // Sammle alle geladenen Sets zusammen
+        Object.keys(loadedSets).forEach(setName => {
+            variants = variants.concat(loadedSets[setName]);
+        });
+    } else {
+        // Normaler Fall: Nur ein Set
+        variants = loadedSets[currentSelectedSet] || [];
+    }
+    
+    if (!variants || variants.length === 0) {
+        grid.innerHTML = '<p style="text-align: center; color: #888;">Keine Sets gefunden.</p>';
+        return;
+    }
+    
+    let variantsToShow = variants;
+    
+    // Filter nach Completion-Status
+    if (currentGearSetsFilter !== 'all') {
+        variantsToShow = variantsToShow.filter(v => {
+            const ownedCount = v.owned_count;
+            
+            if (currentGearSetsFilter === 'none') return ownedCount === 0;
+            if (currentGearSetsFilter === '1') return ownedCount === 1;
+            if (currentGearSetsFilter === '2') return ownedCount === 2;
+            if (currentGearSetsFilter === '3') return ownedCount === 3;
+            if (currentGearSetsFilter === 'all-parts') return ownedCount === 4;
+            
+            return true;
+        });
+    }
+    
+    // Zeige gefilterte Sets an
+    if (variantsToShow.length === 0) {
+        grid.innerHTML = '<p style="text-align: center; color: #888;">Keine Sets mit diesem Filter gefunden.</p>';
+        return;
+    }
+    
+    variantsToShow.forEach(setData => {
+        const card = createGearSetCard(setData);
+        grid.appendChild(card);
+    });
+    
+    // NEU: Update Filter-Button Counts
+    updateFilterButtonCounts(variants);
+    
+    console.log(`✅ Zeige ${variantsToShow.length} Sets`);
+}
+
+// NEU: Berechne und update Filter-Button Counts
+function updateFilterButtonCounts(variants) {
+    // Zähle Sets nach Kategorie
+    const counts = {
+        all: variants.length,
+        none: 0,
+        one: 0,
+        two: 0,
+        three: 0,
+        complete: 0
+    };
+    
+    variants.forEach(v => {
+        const owned = v.owned_count;
+        if (owned === 0) counts.none++;
+        else if (owned === 1) counts.one++;
+        else if (owned === 2) counts.two++;
+        else if (owned === 3) counts.three++;
+        else if (owned === 4) counts.complete++;
+    });
+    
+    // Update Button-Texte
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+        const filter = btn.dataset.filter;
+        let count = 0;
+        let baseText = '';
+        
+        switch(filter) {
+            case 'all':
+                count = counts.all;
+                baseText = 'Alle';
+                break;
+            case 'none':
+                count = counts.none;
+                baseText = '🔴 None (0/4)';
+                break;
+            case '1':
+                count = counts.one;
+                baseText = '🔵 1/4';
+                break;
+            case '2':
+                count = counts.two;
+                baseText = '🔵 2/4';
+                break;
+            case '3':
+                count = counts.three;
+                baseText = '🔵 3/4';
+                break;
+            case 'all-parts':
+                count = counts.complete;
+                baseText = '🟢 ALL (4/4)';
+                break;
+        }
+        
+        // Update Button-Text mit Count
+        btn.textContent = `${baseText} (${count})`;
+    });
+    
+    console.log(`✅ Filter Counts: Alle=${counts.all}, None=${counts.none}, 1/4=${counts.one}, 2/4=${counts.two}, 3/4=${counts.three}, 4/4=${counts.complete}`);
+}
+
+// NEU: Refresh ein spezifisches Set nach Item-Änderung (OPTIMIERT)
+async function refreshGearSetIfNeeded(itemName) {
+    // Versuche Set-Name UND Variante aus Item-Name zu extrahieren
+    // Beispiele: 
+    // "ADP Arms Black" → Set: ADP, Variant: Black
+    // "ADP-mk4 Helmet (Modified)" → Set: ADP, Variant: Modified
+    // "Overlord Helmet Heavy Orange" → Set: Overlord, Variant: Orange
+    
+    let foundItems = []; // [{setName, variant}]
+    
+    // Gehe durch ALLE Sets
+    if (gearSetsCache) {
+        gearSetsCache.forEach(setInfo => {
+            const setName = setInfo.set_name;
+            
+            // Prüfe ob Set-Name im Item-Name vorkommt (case-insensitive)
+            if (itemName.toLowerCase().includes(setName.toLowerCase())) {
+                // Set gefunden! Jetzt versuche Variante zu finden
+                const variants = setInfo.variants || [];
+                
+                // Prüfe jede Variante
+                variants.forEach(variant => {
+                    // Prüfe ob Varianten-Name im Item-Name vorkommt
+                    if (itemName.toLowerCase().includes(variant.toLowerCase())) {
+                        foundItems.push({
+                            setName: setName,
+                            variant: variant
+                        });
+                    }
+                });
+                
+                // Falls keine spezifische Variante gefunden: Markiere ganzes Set
+                if (foundItems.length === 0) {
+                    foundItems.push({
+                        setName: setName,
+                        variant: null // Ganzes Set muss neu geladen werden
+                    });
+                }
+            }
+        });
+    }
+    
+    // Aktualisiere gefundene Items
+    if (foundItems.length > 0) {
+        for (const item of foundItems) {
+            if (item.variant) {
+                // OPTIMIERT: Nur diese eine Variante neu laden
+                console.log(`🔄 Lade nur ${item.setName} ${item.variant} neu (Item: ${itemName})`);
+                await reloadSingleVariant(item.setName, item.variant);
+            } else {
+                // Ganzes Set neu laden (Fallback)
+                console.log(`🗑️ Cache invalidiert für Set: ${item.setName} (Item: ${itemName})`);
+                delete loadedSets[item.setName];
+            }
+        }
+        
+        // Display aktualisieren wenn in Gear-Sets View
+        if (currentView === 'gearsets') {
+            displayGearSets();
+        }
+    }
+}
+
+// NEU: Lade nur eine einzelne Variante eines Sets neu
+async function reloadSingleVariant(setName, variant) {
+    try {
+        const response = await fetch(`/api/get_gear_set_details?set_name=${encodeURIComponent(setName)}&variant=${encodeURIComponent(variant)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Stelle sicher dass loadedSets[setName] existiert
+            if (!loadedSets[setName]) {
+                loadedSets[setName] = [];
+            }
+            
+            // Finde und ersetze die Variante
+            const variants = loadedSets[setName];
+            const index = variants.findIndex(v => v.variant === variant);
+            
+            if (index !== -1) {
+                // Ersetze existierende Variante
+                variants[index] = data.set;
+                console.log(`✅ ${setName} ${variant} aktualisiert`);
+            } else {
+                // Füge neue Variante hinzu
+                variants.push(data.set);
+                console.log(`➕ ${setName} ${variant} hinzugefügt`);
+            }
+        }
+    } catch (error) {
+        console.error(`Fehler beim Laden von ${setName} ${variant}:`, error);
+    }
+}
+function createGearSetCard(setData) {
+    const card = document.createElement('div');
+    card.className = 'gearset-card';
+    
+    const ownedCount = setData.owned_count;
+    
+    // Rahmenfarbe
+    if (ownedCount === 4) {
+        card.classList.add('complete');
+    } else if (ownedCount === 0) {
+        card.classList.add('none');
+    } else {
+        card.classList.add('partial');
+    }
+    
+    // Header
+    const header = document.createElement('div');
+    header.className = 'gearset-header';
+    
+    const name = document.createElement('div');
+    name.className = 'gearset-name';
+    name.textContent = `${setData.set_name} ${setData.variant}`;
+    
+    const status = document.createElement('div');
+    status.className = 'gearset-status';
+    
+    if (ownedCount === 4) {
+        status.classList.add('status-complete');
+        status.textContent = 'ALL (4/4)';
+    } else if (ownedCount === 0) {
+        status.classList.add('status-none');
+        status.textContent = 'None (0/4)';
+    } else {
+        status.classList.add('status-partial');
+        status.textContent = `${ownedCount}/4`;
+    }
+    
+    header.appendChild(name);
+    header.appendChild(status);
+    card.appendChild(header);
+    
+    // Parts Grid (2x2)
+    const partsGrid = document.createElement('div');
+    partsGrid.className = 'gearset-parts';
+    
+    const partOrder = ['helmet', 'core', 'arms', 'legs'];
+    
+    partOrder.forEach(partType => {
+        const piece = setData.pieces[partType];
+        const partDiv = document.createElement('div');
+        partDiv.className = 'gearset-part';
+        
+        if (piece && piece.exists) {
+            // Teil existiert in DB
+            if (piece.owned) {
+                partDiv.classList.add('owned');
+            } else {
+                partDiv.classList.add('missing');
+            }
+            
+            // Bild
+            if (piece.image_url) {
+                const img = document.createElement('img');
+                // Ändere image_url zu medium: ersetze .png mit _medium.png
+                let mediumUrl = piece.image_url;
+                if (mediumUrl.endsWith('.png')) {
+                    mediumUrl = mediumUrl.replace(/\.png$/, '_medium.png');
+                }
+                img.src = mediumUrl;
+                img.alt = partType;
+                partDiv.appendChild(img);
+            }
+            
+            // Name
+            const partName = document.createElement('div');
+            partName.className = 'part-name';
+            partName.textContent = partType.toUpperCase();
+            partDiv.appendChild(partName);
+            
+            // KLICKBAR MACHEN!
+            if (piece.name) {
+                partDiv.style.cursor = 'pointer';
+                partDiv.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    // Öffne Modal mit diesem Item
+                    try {
+                        const itemData = await api.get_item(piece.name);
+                        if (itemData) {
+                            await showItemModal(itemData);
+                        }
+                    } catch (error) {
+                        console.error('Fehler beim Laden des Items:', error);
+                    }
+                });
+            }
+            
+        } else {
+            // Teil existiert nicht in DB
+            partDiv.classList.add('missing');
+            const partName = document.createElement('div');
+            partName.className = 'part-name';
+            partName.textContent = partType.toUpperCase();
+            partName.style.color = '#666';
+            partDiv.appendChild(partName);
+        }
+        
+        partsGrid.appendChild(partDiv);
+    });
+    
+    card.appendChild(partsGrid);
+    
+    return card;
+}
 
 // NEUE FUNKTION: Speichert Sortierung und Filter
 function saveSortAndFilterSettings() {
@@ -426,10 +998,15 @@ function createSearchResultItem(item) {
     });
     div.appendChild(plusBtn);
     
-    // Use THUMB for search results (256x256)
+    // Use THUMB for search results (klein, schnell)
     if (item.icon_url) {
         const img = document.createElement('img');
-        img.src = item.icon_url;
+        // Konvertiere zu thumb: .png → _thumb.png
+        let thumbUrl = item.icon_url;
+        if (thumbUrl.endsWith('.png')) {
+            thumbUrl = thumbUrl.replace(/\.png$/, '_thumb.png');
+        }
+        img.src = thumbUrl;
         img.className = 'search-item-thumbnail';
         img.alt = item.name;
         img.style.width = '32px';
@@ -509,6 +1086,9 @@ async function quickUpdateCount(item, delta, countSpan = null, minusBtn = null) 
         
         // Clear cache
         searchCache = {};
+        
+        // NEU: Refresh Gear-Set falls betroffen
+        await refreshGearSetIfNeeded(itemName);
         
         // OPTIMIERUNG: Nur bei echten Inventar-Änderungen neu laden
         // Fall 1: Item wird ins Inventar hinzugefügt (0 -> 1+)
@@ -600,6 +1180,9 @@ async function addItemToInventory() {
         );
 
         if (result.success) {
+            // NEU: Refresh Gear-Set falls betroffen
+            await refreshGearSetIfNeeded(currentItem.name);
+            
             await loadInventory();
             await loadStats();
             await loadCategories();
@@ -632,6 +1215,9 @@ async function toggleFavorite(itemName, isFavorite) {
         const result = await response.json();
         
         if (result.success) {
+            // NEU: Refresh Gear-Set falls betroffen (auch wenn nur Favorite geändert wird)
+            await refreshGearSetIfNeeded(itemName);
+            
             // Reload inventory to update view (especially if in Favorites category)
             await loadInventory();
             
@@ -706,10 +1292,15 @@ function createInventoryItem(item) {
     div.dataset.name = item.name;
     div.style.position = 'relative';
     
-    // Use MEDIUM for inventory grid (512x512)
+    // Use MEDIUM for inventory grid
     if (item.thumb_url) {
         const img = document.createElement('img');
-        img.src = item.thumb_url;
+        // Konvertiere zu medium: .png → _medium.png
+        let mediumUrl = item.thumb_url;
+        if (mediumUrl.endsWith('.png')) {
+            mediumUrl = mediumUrl.replace(/\.png$/, '_medium.png');
+        }
+        img.src = mediumUrl;
         img.alt = item.name;
         img.style.width = '100%';
         img.style.height = '120px';
@@ -934,6 +1525,10 @@ async function autoSaveCount(itemName, newCount) {
     try {
         await api.update_count(itemName, newCount);
         searchCache = {};
+        
+        // NEU: Refresh Gear-Set falls betroffen
+        await refreshGearSetIfNeeded(itemName);
+        
         await loadInventory();
         await loadStats();
         console.log(`✅ Auto-saved count for ${itemName}: ${newCount}`);
@@ -972,7 +1567,12 @@ async function deleteItem() {
     
     if (confirm(t('modalConfirmDelete', {name: selectedItemForModal.name}))) {
         try {
-            await api.delete_item(selectedItemForModal.name);
+            const itemName = selectedItemForModal.name;
+            await api.delete_item(itemName);
+            
+            // NEU: Refresh Gear-Set falls betroffen
+            await refreshGearSetIfNeeded(itemName);
+            
             await loadInventory();
             await loadStats();
             await loadCategories();
@@ -1051,4 +1651,63 @@ function hideSearchResults() {
 function hideItemPreview() {
     document.getElementById('item-preview').classList.add('hidden');
     currentItem = null;
+}
+
+// ==============================================
+// STICKY HEADER SCROLL-DETECTION
+// Ziehharmonika-Effekt beim Scrollen der gesamten Seite
+// ==============================================
+
+function setupStickyHeaderScrolling() {
+    const viewNavigation = document.querySelector('.view-navigation');
+    const searchSection = document.querySelector('.search-section');
+    const inventoryHeader = document.querySelector('.inventory-header');
+    const gearsetsHeader = document.querySelector('.gearsets-header');
+    
+    // Lausche auf window-Scroll (gesamte Seite)
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        // Bei >50px Scroll: Compact-Modus aktivieren
+        if (scrollTop > 50) {
+            // View-Navigation kompakter machen
+            if (viewNavigation) {
+                viewNavigation.classList.add('compact');
+            }
+            
+            // Search-Section kompakter machen
+            if (searchSection) {
+                searchSection.classList.add('compact');
+            }
+            
+            // Inventar-Header kompakter machen (wenn sichtbar)
+            if (inventoryHeader) {
+                inventoryHeader.classList.add('compact');
+            }
+            
+            // Gear-Sets-Header kompakter machen (wenn sichtbar)
+            if (gearsetsHeader) {
+                gearsetsHeader.classList.add('compact');
+            }
+        } else {
+            // Zurück zum Normal-Zustand
+            if (viewNavigation) {
+                viewNavigation.classList.remove('compact');
+            }
+            
+            if (searchSection) {
+                searchSection.classList.remove('compact');
+            }
+            
+            if (inventoryHeader) {
+                inventoryHeader.classList.remove('compact');
+            }
+            
+            if (gearsetsHeader) {
+                gearsetsHeader.classList.remove('compact');
+            }
+        }
+    });
+    
+    console.log('✅ Ziehharmonika-Effekt (Sticky Header + Search) aktiviert');
 }

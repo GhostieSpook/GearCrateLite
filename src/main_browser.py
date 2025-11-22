@@ -145,14 +145,10 @@ class GearCrateAPIHandler(SimpleHTTPRequestHandler):
                 self.send_error(500, str(e))
                 return
         
-        if path.startswith('/api/get_gear_set_details?'):
+        if path == '/api/get_gear_set_details':
             try:
-                # Parse query parameters
-                parsed = urlparse(path)
-                params = parse_qs(parsed.query)
-                
-                set_name = params.get('set_name', [''])[0]
-                variant = params.get('variant', [''])[0]
+                set_name = query_params.get('set_name', [''])[0]
+                variant = query_params.get('variant', [''])[0]
                 
                 result = GearCrateAPIHandler.api.get_gear_set_details(set_name, variant)
                 
@@ -166,12 +162,9 @@ class GearCrateAPIHandler(SimpleHTTPRequestHandler):
                 self.send_error(500, str(e))
                 return
         
-        if path.startswith('/api/get_gear_set_variants?'):
+        if path == '/api/get_gear_set_variants':
             try:
-                parsed = urlparse(path)
-                params = parse_qs(parsed.query)
-                
-                set_name = params.get('set_name', [''])[0]
+                set_name = query_params.get('set_name', [''])[0]
                 
                 result = GearCrateAPIHandler.api.get_gear_set_variants(set_name)
                 
