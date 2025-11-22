@@ -401,7 +401,11 @@ function createSearchResultItem(item) {
     minusBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (item.count > 0) {
-            await quickUpdateCount(item.name, -1);
+            // Finde die Zahl-Anzeige DIREKT (im gleichen div)
+            const parentDiv = e.target.closest('.search-result-item');
+            const countSpan = parentDiv.querySelector('.search-item-count');
+            
+            await quickUpdateCount(item, -1, countSpan, minusBtn);
         }
     });
     div.appendChild(minusBtn);
@@ -412,7 +416,13 @@ function createSearchResultItem(item) {
     plusBtn.className = 'search-quick-btn search-btn-plus';
     plusBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        await quickUpdateCount(item.name, 1);
+        
+        // Finde die Zahl-Anzeige DIREKT (im gleichen div)
+        const parentDiv = e.target.closest('.search-result-item');
+        const countSpan = parentDiv.querySelector('.search-item-count');
+        const minusBtnInDiv = parentDiv.querySelector('.search-btn-minus');
+        
+        await quickUpdateCount(item, 1, countSpan, minusBtnInDiv);
     });
     div.appendChild(plusBtn);
     
@@ -467,31 +477,95 @@ function createSearchResultItem(item) {
     return div;
 }
 
-async function quickUpdateCount(itemName, delta) {
+async function quickUpdateCount(item, delta, countSpan = null, minusBtn = null) {
     try {
-        const item = await api.get_item(itemName);
-        if (!item) {
-            console.error('Item not found:', itemName);
-            return;
+        // Item-Daten sind schon da - kein get_item() mehr nötig!
+        const itemName = item.name;
+        const oldCount = item.count;
+        const newCount = Math.max(0, oldCount + delta);
+        await api.update_count(itemName, newCount);
+        
+        // WICHTIG: Item-Objekt aktualisieren für nächsten Klick!
+        item.count = newCount;
+        
+        // SOFORT: UI updaten (falls Elemente übergeben wurden)
+        if (countSpan) {
+            countSpan.textContent = `${newCount}x`;
+            countSpan.style.color = newCount > 0 ? '#00d9ff' : '#666';
+            // Visueller Effekt
+            countSpan.style.transition = 'transform 0.15s';
+            countSpan.style.transform = 'scale(1.3)';
+            setTimeout(() => {
+                countSpan.style.transform = 'scale(1)';
+            }, 150);
         }
         
-        const newCount = Math.max(0, item.count + delta);
-        await api.update_count(itemName, newCount);
+        // Minus-Button Status updaten (falls übergeben)
+        if (minusBtn) {
+            minusBtn.disabled = newCount === 0;
+            minusBtn.style.opacity = newCount === 0 ? '0.3' : '1';
+            minusBtn.style.cursor = newCount === 0 ? 'not-allowed' : 'pointer';
+        }
         
         // Clear cache
         searchCache = {};
         
-        await loadInventory();
-        await loadStats();
-        
-        // Refresh search results
-        const searchInput = document.getElementById('search-input');
-        if (searchInput && searchInput.value && searchInput.value.length >= 2) {
-            await handleSearch(searchInput.value);
+        // OPTIMIERUNG: Nur bei echten Inventar-Änderungen neu laden
+        // Fall 1: Item wird ins Inventar hinzugefügt (0 -> 1+)
+        if (oldCount === 0 && newCount > 0) {
+            await loadInventory();
+            await loadStats();
+        }
+        // Fall 2: Item wird aus Inventar entfernt (1+ -> 0) 
+        else if (oldCount > 0 && newCount === 0) {
+            await loadInventory();
+            await loadStats();
+        }
+        // Fall 3: Nur Count-Änderung - KEIN RELOAD, nur UI update
+        else {
+            // Update im Inventar-Grid (wenn sichtbar)
+            const inventoryItem = document.querySelector(`.inventory-item[data-name="${CSS.escape(itemName)}"]`);
+            if (inventoryItem) {
+                const countElement = inventoryItem.querySelector('.count');
+                if (countElement) {
+                    countElement.textContent = `${newCount}x`;
+                    // Optionaler visueller Effekt
+                    countElement.style.transition = 'transform 0.2s';
+                    countElement.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        countElement.style.transform = 'scale(1)';
+                    }, 200);
+                }
+            }
+            
+            // Update in Suchergebnissen
+            const searchResults = document.querySelectorAll('.search-result-item');
+            searchResults.forEach(result => {
+                const nameSpan = result.querySelector('.search-item-name');
+                if (nameSpan && nameSpan.textContent === itemName) {
+                    const countSpan = result.querySelector('.search-item-count');
+                    if (countSpan) {
+                        countSpan.textContent = `${newCount}x`;
+                        countSpan.style.color = newCount > 0 ? '#00d9ff' : '#666';
+                    }
+                    
+                    // Minus-Button Status updaten
+                    const minusBtn = result.querySelector('.search-btn-minus');
+                    if (minusBtn) {
+                        minusBtn.disabled = newCount === 0;
+                        minusBtn.style.opacity = newCount === 0 ? '0.3' : '1';
+                        minusBtn.style.cursor = newCount === 0 ? 'not-allowed' : 'pointer';
+                    }
+                }
+            });
+            
+            // Stats verzögert updaten (nicht blockierend)
+            setTimeout(() => loadStats(), 500);
         }
         
         // FOKUS ZURÜCKSETZEN - Wichtig für schnelles Arbeiten!
         // Prüfe welches Feld aktiv war und setze Fokus zurück
+        const searchInput = document.getElementById('search-input');
         const filterInput = document.getElementById('filter-input');
         
         if (searchInput && searchInput.value && searchInput.value.length >= 2) {
@@ -712,7 +786,7 @@ function createInventoryItem(item) {
     plusBtn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
     plusBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        await quickUpdateCount(item.name, 1);
+        await quickUpdateCount(item, 1, null, null);
     });
     
     // Minus button
@@ -730,7 +804,7 @@ function createInventoryItem(item) {
     minusBtn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
     minusBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        await quickUpdateCount(item.name, -1);
+        await quickUpdateCount(item, -1, null, null);
     });
     
     quickActions.appendChild(plusBtn);

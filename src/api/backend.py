@@ -17,6 +17,7 @@ from database.models import Database
 from database.operations import ItemOperations
 from scraper.cstone import CStoneScraper
 from cache.image_cache import ImageCache
+from cache.gear_sets import GearSetsManager
 
 
 class API:
@@ -26,6 +27,7 @@ class API:
         self.operations = ItemOperations(self.db)
         self.scraper = CStoneScraper()
         self.cache = ImageCache()
+        self.gear_sets = GearSetsManager()
 
     def _path_to_url(self, path):
         """
@@ -265,5 +267,91 @@ class API:
                 status_val = 1 if is_favorite else 0
                 
             return self.operations.toggle_favorite_status(name, status_val)
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    # =========================================================
+    # GEAR SETS FUNKTIONEN
+    # =========================================================
+
+    def get_all_gear_sets(self):
+        """
+        Gibt eine Liste aller verfügbaren Gear Sets zurück.
+        Jedes Set enthält: Name, Anzahl Varianten, Beispiel-Varianten
+        """
+        try:
+            summary = self.gear_sets.get_all_sets_summary(self.db.conn)
+            return {'success': True, 'sets': summary}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def get_gear_set_details(self, set_name, variant=''):
+        """
+        Gibt Details zu einem spezifischen Set zurück.
+        Enthält alle 4 Teile mit Bildern und Inventar-Status.
+        """
+        try:
+            pieces = self.gear_sets.get_set_pieces(self.db.conn, set_name, variant)
+            
+            if not pieces:
+                return {'success': False, 'error': 'Set nicht gefunden'}
+            
+            # Bereite Daten für Frontend auf
+            result = {
+                'set_name': set_name,
+                'variant': variant if variant else 'Base',
+                'pieces': {}
+            }
+            
+            # Zähle wie viele Teile vorhanden sind
+            owned_count = 0
+            
+            for part_type, piece in pieces.items():
+                if piece:
+                    # Teil existiert in DB
+                    piece_data = {
+                        'exists': True,
+                        'name': piece['name'],
+                        'count': piece.get('count', 0),
+                        'owned': piece.get('count', 0) > 0,
+                        'image_url': None
+                    }
+                    
+                    # Bild-URL hinzufügen
+                    if piece.get('image_path'):
+                        piece_data['image_url'] = self._path_to_url(piece['image_path'])
+                    elif piece.get('image_url'):
+                        piece_data['image_url'] = piece['image_url']
+                    
+                    if piece_data['owned']:
+                        owned_count += 1
+                    
+                    result['pieces'][part_type] = piece_data
+                else:
+                    # Teil nicht in DB gefunden
+                    result['pieces'][part_type] = {
+                        'exists': False,
+                        'name': None,
+                        'count': 0,
+                        'owned': False,
+                        'image_url': None
+                    }
+            
+            result['owned_count'] = owned_count
+            result['total_count'] = 4
+            result['completion'] = f"{owned_count}/4"
+            
+            return {'success': True, 'set': result}
+            
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def get_gear_set_variants(self, set_name):
+        """
+        Gibt alle Farbvarianten eines Sets zurück.
+        """
+        try:
+            variants = self.gear_sets.get_set_variants(self.db.conn, set_name)
+            return {'success': True, 'variants': variants}
         except Exception as e:
             return {'success': False, 'error': str(e)}

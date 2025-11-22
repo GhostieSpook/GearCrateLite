@@ -131,6 +131,60 @@ class GearCrateAPIHandler(SimpleHTTPRequestHandler):
                 self.send_error(500, str(e))
                 return
         
+        # GEAR SETS API
+        if path == '/api/get_all_gear_sets':
+            try:
+                result = GearCrateAPIHandler.api.get_all_gear_sets()
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode())
+                return
+            except Exception as e:
+                self.send_error(500, str(e))
+                return
+        
+        if path.startswith('/api/get_gear_set_details?'):
+            try:
+                # Parse query parameters
+                parsed = urlparse(path)
+                params = parse_qs(parsed.query)
+                
+                set_name = params.get('set_name', [''])[0]
+                variant = params.get('variant', [''])[0]
+                
+                result = GearCrateAPIHandler.api.get_gear_set_details(set_name, variant)
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode())
+                return
+            except Exception as e:
+                self.send_error(500, str(e))
+                return
+        
+        if path.startswith('/api/get_gear_set_variants?'):
+            try:
+                parsed = urlparse(path)
+                params = parse_qs(parsed.query)
+                
+                set_name = params.get('set_name', [''])[0]
+                
+                result = GearCrateAPIHandler.api.get_gear_set_variants(set_name)
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode())
+                return
+            except Exception as e:
+                self.send_error(500, str(e))
+                return
+        
         # Handle bulk-import API
         if path.startswith('/api/bulk-import/'):
             try:
