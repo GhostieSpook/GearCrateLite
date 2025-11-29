@@ -407,3 +407,183 @@ class API:
             import traceback
             traceback.print_exc()
             raise e
+
+    # =========================================================
+    # INVENTORY SCANNER FUNKTIONEN
+    # =========================================================
+
+    def set_scan_mode(self, mode):
+        """
+        Sets the scan mode in InvDetect/config.py
+        mode: 1 (1x1) or 2 (1x2)
+        """
+        import os
+
+        config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'InvDetect', 'config.py')
+
+        try:
+            # Read current config
+            with open(config_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+
+            # Update SCAN_MODE line
+            for i, line in enumerate(lines):
+                if line.strip().startswith('SCAN_MODE ='):
+                    lines[i] = f'SCAN_MODE = {mode}\n'
+                    break
+
+            # Write back
+            with open(config_path, 'w', encoding='utf-8') as f:
+                f.writelines(lines)
+
+            return {'success': True, 'mode': mode}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def start_scanner(self):
+        """
+        Starts the InvDetect scanner as a subprocess (CMD window)
+        """
+        import subprocess
+        import os
+
+        # Path to InvDetect main.py
+        invdetect_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'InvDetect')
+        main_py = os.path.join(invdetect_dir, 'main.py')
+
+        try:
+            # Start as CMD window (visible for debugging)
+            # Using 'start' command to open new CMD window
+            subprocess.Popen(
+                ['cmd', '/c', 'start', 'cmd', '/k', 'python', main_py],
+                cwd=invdetect_dir,
+                creationflags=subprocess.CREATE_NEW_CONSOLE
+            )
+
+            return {'success': True, 'message': 'Scanner started'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def get_scan_results(self):
+        """
+        Reads detected_items.txt and not_detected.md, matches items with database
+        Returns: {found: [...], not_found: [...]}
+        """
+        import os
+        from rapidfuzz import fuzz, process
+
+        invdetect_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'InvDetect')
+        detected_file = os.path.join(invdetect_dir, 'detected_items.txt')
+        not_detected_file = os.path.join(invdetect_dir, 'not_detected.md')
+
+        found_items = []
+        not_found_items = []
+
+        # Read detected_items.txt
+        if os.path.exists(detected_file):
+            try:
+                with open(detected_file, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line or line.startswith('#'):
+                            continue
+
+                        # Format: "count, item_name"
+                        parts = line.split(',', 1)
+                        if len(parts) == 2:
+                            count = int(parts[0].strip())
+                            item_name = parts[1].strip()
+
+                            # Fuzzy match with database
+                            all_items = self.operations.get_all_items(include_zero_count=True)
+                            item_names = [item['name'] for item in all_items]
+
+                            match = process.extractOne(item_name, item_names, scorer=fuzz.ratio)
+
+                            if match and match[1] >= 75:  # 75% match threshold
+                                matched_name = match[0]
+                                db_item = next((item for item in all_items if item['name'] == matched_name), None)
+
+                                if db_item:
+                                    found_items.append({
+                                        'name': db_item['name'],
+                                        'scanned_name': item_name,
+                                        'count': count,
+                                        'item_type': db_item.get('item_type'),
+                                        'image_url': self._path_to_url(db_item.get('image_path')) if db_item.get('image_path') else db_item.get('image_url'),
+                                        'db_id': db_item.get('id')
+                                    })
+            except Exception as e:
+                print(f"Error reading detected_items.txt: {e}")
+
+        # Read not_detected.md
+        if os.path.exists(not_detected_file):
+            try:
+                with open(not_detected_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    # Parse markdown list
+                    for line in content.split('\n'):
+                        if line.strip().startswith('-'):
+                            text = line.strip().lstrip('- ').strip()
+                            if text and not text.startswith('#'):
+                                not_found_items.append({'ocr_text': text})
+            except Exception as e:
+                print(f"Error reading not_detected.md: {e}")
+
+        return {
+            'success': True,
+            'found': found_items,
+            'not_found': not_found_items
+        }
+
+    def import_scanned_items(self, items):
+        """
+        Imports scanned items into inventory
+        items: [{name, count}, ...]
+        For existing items: adds to count
+        For new items: creates with scanned count
+        """
+        import_results = []
+
+        for item_data in items:
+            item_name = item_data.get('name')
+            scanned_count = item_data.get('count', 1)
+
+            try:
+                # Check if item exists
+                existing = self.operations.get_item(item_name)
+
+                if existing:
+                    # Item exists → add to count
+                    new_count = existing.get('count', 0) + scanned_count
+                    result = self.operations.update_item_count(item_name, new_count)
+                    import_results.append({
+                        'name': item_name,
+                        'action': 'updated',
+                        'old_count': existing.get('count', 0),
+                        'new_count': new_count,
+                        'success': result.get('success', False)
+                    })
+                else:
+                    # Item doesn't exist → should not happen (items come from DB)
+                    # But just in case, we create it
+                    result = self.operations.update_item_count(item_name, scanned_count)
+                    import_results.append({
+                        'name': item_name,
+                        'action': 'created',
+                        'count': scanned_count,
+                        'success': result.get('success', False)
+                    })
+
+            except Exception as e:
+                import_results.append({
+                    'name': item_name,
+                    'action': 'error',
+                    'error': str(e),
+                    'success': False
+                })
+
+        return {
+            'success': True,
+            'results': import_results
+        }

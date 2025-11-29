@@ -1293,3 +1293,360 @@ textarea {
 .autocomplete-dropdown::-webkit-scrollbar-thumb:hover {
     background: #00ffff;
 }
+
+/* ========================================
+   IMPORT FROM SC VIEW STYLES
+   ======================================== */
+
+.import-section {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #00d9ff;
+}
+
+.import-state {
+    margin-bottom: 20px;
+}
+
+/* Admin Warning */
+.admin-warning {
+    background: rgba(255, 107, 107, 0.15);
+    border: 2px solid #ff6b6b;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.admin-warning h3 {
+    color: #ff6b6b;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.admin-warning p {
+    color: #ddd;
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.admin-warning code {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #00d9ff;
+    font-family: monospace;
+    font-size: 0.95em;
+}
+
+/* Scan Mode Selection */
+.scan-mode-selection {
+    margin: 20px 0;
+}
+
+.scan-mode-selection h3 {
+    color: #00d9ff;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.mode-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.mode-btn {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #555;
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.mode-btn:hover {
+    border-color: #00d9ff;
+    background: rgba(0, 217, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.mode-btn.active {
+    border-color: #00ff00;
+    background: rgba(0, 255, 0, 0.1);
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+}
+
+.mode-icon {
+    font-size: 3em;
+    margin-bottom: 10px;
+}
+
+.mode-title {
+    color: #00d9ff;
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.mode-description {
+    color: #aaa;
+    font-size: 0.9em;
+}
+
+/* Scan Instructions */
+.scan-instructions {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.scan-instructions h3 {
+    color: #00d9ff;
+    margin-bottom: 15px;
+}
+
+.scan-instructions ol {
+    margin-left: 20px;
+    color: #ddd;
+    line-height: 1.8;
+}
+
+.scan-instructions li {
+    margin-bottom: 8px;
+}
+
+.scan-instructions li strong {
+    color: #ff6b6b;
+}
+
+.scan-tip {
+    background: rgba(0, 217, 255, 0.1);
+    border-left: 4px solid #00d9ff;
+    padding: 12px;
+    margin-top: 15px;
+    border-radius: 5px;
+}
+
+.scan-tip strong {
+    color: #00ffff;
+}
+
+/* Scan Buttons */
+.scan-btn {
+    background: linear-gradient(135deg, #00d9ff, #00b8d4);
+    border: none;
+    color: #000;
+    padding: 15px 40px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 20px auto;
+    display: block;
+    box-shadow: 0 4px 15px rgba(0, 217, 255, 0.3);
+}
+
+.scan-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 217, 255, 0.5);
+}
+
+.scan-btn:active {
+    transform: translateY(0);
+}
+
+.secondary-btn {
+    background: rgba(85, 85, 85, 0.5);
+    border: 2px solid #555;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 1em;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 10px;
+}
+
+.secondary-btn:hover {
+    border-color: #00d9ff;
+    background: rgba(0, 217, 255, 0.1);
+}
+
+/* Import Controls */
+.import-controls {
+    margin: 20px 0;
+}
+
+.import-controls h3 {
+    color: #00d9ff;
+    margin-bottom: 10px;
+}
+
+/* Undo/Redo Controls */
+.import-undo-controls {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+    justify-content: center;
+}
+
+.undo-btn,
+.redo-btn {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #555;
+    color: #fff;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1em;
+}
+
+.undo-btn:hover:not(:disabled),
+.redo-btn:hover:not(:disabled) {
+    border-color: #00d9ff;
+    background: rgba(0, 217, 255, 0.1);
+}
+
+.undo-btn:disabled,
+.redo-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Import Results */
+.import-results-section {
+    margin: 20px 0;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #555;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.import-results-section h3 {
+    color: #00d9ff;
+    margin-bottom: 15px;
+}
+
+/* Import Grid (similar to inventory grid) */
+.import-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+    padding: 10px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.import-item {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #555;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.import-item:hover {
+    border-color: #00d9ff;
+    transform: translateY(-2px);
+}
+
+.import-item img {
+    width: 100%;
+    height: 120px;
+    object-fit: contain;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.import-item-name {
+    color: #fff;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+    word-wrap: break-word;
+}
+
+.import-item-count {
+    color: #00d9ff;
+    font-weight: bold;
+    font-size: 0.85em;
+}
+
+.import-item-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255, 0, 0, 0.8);
+    border: none;
+    color: #fff;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.import-item-remove:hover {
+    background: rgba(255, 0, 0, 1);
+    transform: scale(1.1);
+}
+
+/* Not Found List */
+.import-notfound-list {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    border-radius: 5px;
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.import-notfound-item {
+    color: #ff6b6b;
+    padding: 5px;
+    border-bottom: 1px solid #333;
+    font-family: monospace;
+}
+
+.import-notfound-item:last-child {
+    border-bottom: none;
+}
+
+/* Import Actions */
+.import-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Scrollbar for import grid */
+.import-grid::-webkit-scrollbar {
+    width: 10px;
+}
+
+.import-grid::-webkit-scrollbar-track {
+    background: #0f0f1e;
+    border-radius: 5px;
+}
+
+.import-grid::-webkit-scrollbar-thumb {
+    background: #00d9ff;
+    border-radius: 5px;
+}
+
+.import-grid::-webkit-scrollbar-thumb:hover {
+    background: #00ffff;
+}

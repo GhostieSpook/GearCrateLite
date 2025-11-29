@@ -50,36 +50,42 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupViewSwitching() {
     const inventoryBtn = document.getElementById('view-btn-inventory');
     const gearsetsBtn = document.getElementById('view-btn-gearsets');
-    
+    const importBtn = document.getElementById('view-btn-import');
+
     inventoryBtn.addEventListener('click', () => switchToView('inventory'));
     gearsetsBtn.addEventListener('click', () => switchToView('gearsets'));
+    importBtn.addEventListener('click', () => switchToView('import'));
 }
 
 function switchToView(view) {
     currentView = view;
     localStorage.setItem('currentView', view);
-    
+
     // Buttons updaten
     const inventoryBtn = document.getElementById('view-btn-inventory');
     const gearsetsBtn = document.getElementById('view-btn-gearsets');
-    
+    const importBtn = document.getElementById('view-btn-import');
+
     inventoryBtn.classList.remove('active');
     gearsetsBtn.classList.remove('active');
-    
+    importBtn.classList.remove('active');
+
     // Views updaten
     const inventoryView = document.getElementById('inventory-view');
     const gearsetsView = document.getElementById('gearsets-view');
-    
+    const importView = document.getElementById('import-view');
+
     inventoryView.classList.remove('active');
     gearsetsView.classList.remove('active');
-    
+    importView.classList.remove('active');
+
     if (view === 'inventory') {
         inventoryBtn.classList.add('active');
         inventoryView.classList.add('active');
     } else if (view === 'gearsets') {
         gearsetsBtn.classList.add('active');
         gearsetsView.classList.add('active');
-        
+
         // Gear Sets laden wenn noch nicht gecached
         if (!gearSetsCache) {
             loadGearSets();
@@ -87,6 +93,9 @@ function switchToView(view) {
             // NEU: Prüfe invalidierte Sets und lade sie neu
             reloadInvalidatedSets();
         }
+    } else if (view === 'import') {
+        importBtn.classList.add('active');
+        importView.classList.add('active');
     }
 }
 
@@ -2168,4 +2177,252 @@ function setupStickyHeaderScrolling() {
     });
     
     console.log('✅ Ziehharmonika-Effekt (Sticky Header + Search) aktiviert');
+}
+
+// ========================================
+// IMPORT FROM SC VIEW LOGIC
+// ========================================
+let currentScanMode = 1;
+let importFoundItems = [];
+let importNotFoundItems = [];
+let undoStack = [];
+let redoStack = [];
+let currentImportCategoryFilter = '';
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupImportView();
+});
+
+function setupImportView() {
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            modeBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentScanMode = parseInt(this.getAttribute('data-mode'));
+        });
+    });
+
+    document.getElementById('start-scan-btn')?.addEventListener('click', startScan);
+    document.getElementById('check-results-btn')?.addEventListener('click', loadScanResults);
+    document.getElementById('import-items-btn')?.addEventListener('click', importItems);
+    document.getElementById('new-scan-btn')?.addEventListener('click', resetToBeforeScan);
+    document.getElementById('undo-btn')?.addEventListener('click', undoRemove);
+    document.getElementById('redo-btn')?.addEventListener('click', redoRemove);
+    document.getElementById('open-notdetected-btn')?.addEventListener('click', () => alert('Die Datei not_detected.md befindet sich im InvDetect Ordner.'));
+}
+
+async function startScan() {
+    try {
+        const modeResult = await apiCall('set_scan_mode', { mode: currentScanMode });
+        if (!modeResult.success) {
+            alert('Fehler beim Setzen des Scan-Modus: ' + modeResult.error);
+            return;
+        }
+
+        const scanResult = await apiCall('start_scanner', {});
+        if (!scanResult.success) {
+            alert('Fehler beim Starten des Scanners: ' + scanResult.error);
+            return;
+        }
+
+        document.getElementById('import-before-scan').classList.add('hidden');
+        document.getElementById('import-during-scan').classList.remove('hidden');
+        document.getElementById('import-after-scan').classList.add('hidden');
+    } catch (error) {
+        alert('Fehler beim Starten des Scans: ' + error.message);
+    }
+}
+
+async function loadScanResults() {
+    try {
+        const response = await fetch('/api/get_scan_results');
+        const data = await response.json();
+
+        if (!data.success) {
+            alert('Fehler beim Laden der Scan-Ergebnisse');
+            return;
+        }
+
+        importFoundItems = data.found || [];
+        importNotFoundItems = data.not_found || [];
+        undoStack = [];
+        redoStack = [];
+        updateUndoRedoButtons();
+
+        document.getElementById('import-before-scan').classList.add('hidden');
+        document.getElementById('import-during-scan').classList.add('hidden');
+        document.getElementById('import-after-scan').classList.remove('hidden');
+
+        loadImportCategories();
+        displayImportResults();
+    } catch (error) {
+        alert('Fehler beim Laden der Ergebnisse: ' + error.message);
+    }
+}
+
+function loadImportCategories() {
+    const categories = new Set();
+    importFoundItems.forEach(item => {
+        if (item.item_type) categories.add(item.item_type);
+    });
+
+    const categoryButtons = document.getElementById('import-category-buttons');
+    categoryButtons.innerHTML = '';
+
+    const allBtn = document.createElement('button');
+    allBtn.className = 'category-btn active';
+    allBtn.textContent = '🌐 Alle';
+    allBtn.addEventListener('click', () => {
+        currentImportCategoryFilter = '';
+        document.querySelectorAll('#import-category-buttons .category-btn').forEach(b => b.classList.remove('active'));
+        allBtn.classList.add('active');
+        displayImportResults();
+    });
+    categoryButtons.appendChild(allBtn);
+
+    Array.from(categories).sort().forEach(category => {
+        const btn = document.createElement('button');
+        btn.className = 'category-btn';
+        btn.textContent = category;
+        btn.addEventListener('click', () => {
+            currentImportCategoryFilter = category;
+            document.querySelectorAll('#import-category-buttons .category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            displayImportResults();
+        });
+        categoryButtons.appendChild(btn);
+    });
+}
+
+function displayImportResults() {
+    const filteredItems = currentImportCategoryFilter
+        ? importFoundItems.filter(item => item.item_type === currentImportCategoryFilter)
+        : importFoundItems;
+
+    document.getElementById('found-count').textContent = filteredItems.length;
+    document.getElementById('notfound-count').textContent = importNotFoundItems.length;
+
+    const grid = document.getElementById('import-found-grid');
+    grid.innerHTML = '';
+
+    if (filteredItems.length === 0) {
+        grid.innerHTML = '<p style="color: #888; text-align: center; grid-column: 1 / -1;">Keine Items gefunden.</p>';
+    } else {
+        filteredItems.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'import-item';
+            itemDiv.innerHTML = `
+                <button class="import-item-remove" title="Item entfernen">❌</button>
+                <img src="${item.image_url || '/img/placeholder.png'}" alt="${item.name}" onerror="this.src='/img/placeholder.png'">
+                <div class="import-item-name">${item.name}</div>
+                <div class="import-item-count">Anzahl: ${item.count}</div>
+                ${item.scanned_name !== item.name ? `<div style="font-size: 0.75em; color: #888;">OCR: ${item.scanned_name}</div>` : ''}
+            `;
+
+            itemDiv.querySelector('.import-item-remove').addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeItem(importFoundItems.indexOf(item));
+            });
+
+            grid.appendChild(itemDiv);
+        });
+    }
+
+    const notFoundList = document.getElementById('import-notfound-list');
+    notFoundList.innerHTML = '';
+
+    if (importNotFoundItems.length === 0) {
+        notFoundList.innerHTML = '<div style="color: #888; text-align: center;">Alle Items wurden erkannt!</div>';
+    } else {
+        importNotFoundItems.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'import-notfound-item';
+            itemDiv.textContent = item.ocr_text;
+            notFoundList.appendChild(itemDiv);
+        });
+    }
+}
+
+function removeItem(index) {
+    const item = importFoundItems[index];
+    undoStack.push({ action: 'remove', item: item, index: index });
+    redoStack = [];
+    importFoundItems.splice(index, 1);
+    displayImportResults();
+    updateUndoRedoButtons();
+}
+
+function undoRemove() {
+    if (undoStack.length === 0) return;
+    const action = undoStack.pop();
+    if (action.action === 'remove') {
+        importFoundItems.splice(action.index, 0, action.item);
+        redoStack.push(action);
+    }
+    displayImportResults();
+    updateUndoRedoButtons();
+}
+
+function redoRemove() {
+    if (redoStack.length === 0) return;
+    const action = redoStack.pop();
+    if (action.action === 'remove') {
+        importFoundItems.splice(action.index, 1);
+        undoStack.push(action);
+    }
+    displayImportResults();
+    updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+    document.getElementById('undo-btn').disabled = undoStack.length === 0;
+    document.getElementById('redo-btn').disabled = redoStack.length === 0;
+}
+
+async function importItems() {
+    if (importFoundItems.length === 0) {
+        alert('Keine Items zum Importieren ausgewählt!');
+        return;
+    }
+
+    if (!confirm(`${importFoundItems.length} Items in das Inventar importieren?`)) {
+        return;
+    }
+
+    try {
+        const itemsToImport = importFoundItems.map(item => ({
+            name: item.name,
+            count: item.count
+        }));
+
+        const result = await apiCall('import_scanned_items', { items: itemsToImport });
+
+        if (!result.success) {
+            alert('Fehler beim Importieren: ' + result.error);
+            return;
+        }
+
+        const successCount = result.results.filter(r => r.success).length;
+        alert(`${successCount} von ${importFoundItems.length} Items erfolgreich importiert!`);
+
+        loadInventory();
+        loadStats();
+        switchToView('inventory');
+        resetToBeforeScan();
+    } catch (error) {
+        alert('Fehler beim Importieren: ' + error.message);
+    }
+}
+
+function resetToBeforeScan() {
+    importFoundItems = [];
+    importNotFoundItems = [];
+    undoStack = [];
+    redoStack = [];
+    currentImportCategoryFilter = '';
+
+    document.getElementById('import-before-scan').classList.remove('hidden');
+    document.getElementById('import-during-scan').classList.add('hidden');
+    document.getElementById('import-after-scan').classList.add('hidden');
 }

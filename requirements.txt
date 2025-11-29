@@ -1,7 +1,18 @@
+# GearCrate Requirements
 pywebview
 requests
 beautifulsoup4
-Pillow
+Pillow==10.4.0
 Flask
 Flask-Cors
 lxml
+
+# InvDetect Requirements (Scanner Integration)
+pyautogui==0.9.54
+keyboard==0.13.5
+pywin32==306
+psutil==6.1.0
+easyocr==1.7.2
+opencv-python==4.10.0.84
+numpy==2.1.2
+rapidfuzz==3.10.0

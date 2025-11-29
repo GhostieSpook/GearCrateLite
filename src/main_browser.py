@@ -203,18 +203,37 @@ class GearCrateAPIHandler(SimpleHTTPRequestHandler):
             try:
                 category_url = path.split('/api/bulk-import/')[1]
                 result = GearCrateAPIHandler.api.get_category_items(category_url)
-                
+
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode())
                 return
-            
+
             except Exception as e:
                 self.send_error(500, str(e))
                 return
-        
+
+        # Scanner: Get scan results
+        if path == '/api/get_scan_results':
+            try:
+                result = GearCrateAPIHandler.api.get_scan_results()
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode())
+                return
+
+            except Exception as e:
+                print(f"❌ Error getting scan results: {e}")
+                import traceback
+                traceback.print_exc()
+                self.send_error(500, str(e))
+                return
+
         # Default file serving
         super().do_GET()
     
