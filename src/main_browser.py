@@ -37,10 +37,10 @@ class GearCrateAPIHandler(SimpleHTTPRequestHandler):
         path = parsed_url.path
         query_params = parse_qs(parsed_url.query)
         
-        # Handle STATIC IMAGE FILES from cache - CRITICAL!
-        if path.startswith('/cache/'):
+        # Handle STATIC IMAGE FILES from images directory - CRITICAL!
+        if path.startswith('/images/'):
             try:
-                cache_rel_path = path[7:]  # Remove '/cache/' prefix
+                cache_rel_path = path[8:]  # Remove '/images/' prefix
                 cache_rel_path = cache_rel_path.replace('/', os.sep)
                 image_path = os.path.join(GearCrateAPIHandler.cache_dir, cache_rel_path)
                 
@@ -282,7 +282,7 @@ def start_server():
     GearCrateAPIHandler.api = API()
     
     # Set cache directory to images subfolder
-    GearCrateAPIHandler.cache_dir = os.path.join(project_root, 'data', 'cache', 'images')
+    GearCrateAPIHandler.cache_dir = os.path.join(project_root, 'data', 'images')
     
     httpd = HTTPServer(server_address, GearCrateAPIHandler)
     

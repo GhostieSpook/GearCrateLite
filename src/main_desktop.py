@@ -21,12 +21,14 @@ import webview
 
 class DesktopServer:
     """Desktop server with pywebview"""
-    
+
     def __init__(self, port=8080):
         self.port = port
         self.httpd = None
         self.server_thread = None
         self.api = None
+        self.window = None
+        self.devtools_open = False
         
     def start_http_server(self):
         """Start HTTP server in background thread"""
@@ -37,7 +39,7 @@ class DesktopServer:
         GearCrateAPIHandler.api = self.api
         
         # Set cache directory
-        GearCrateAPIHandler.cache_dir = os.path.join(project_root, 'data', 'cache', 'images')
+        GearCrateAPIHandler.cache_dir = os.path.join(project_root, 'data', 'images')
         
         # Change to web directory
         web_dir = os.path.join(project_root, 'web')
@@ -56,27 +58,53 @@ class DesktopServer:
         # Wait a bit to ensure server is ready
         time.sleep(0.5)
     
+    def on_loaded(self):
+        """Called when window finishes loading - hide DevTools if they auto-opened"""
+        # DevTools auto-open with debug=True
+        # Close them by simulating F12 keypress
+        def close_devtools():
+            time.sleep(0.5)  # Wait for window to be ready
+            try:
+                import pyautogui
+                # Focus the window first, then press F12 to close DevTools
+                pyautogui.press('f12')
+                print("📌 DevTools geschlossen - drücke F12 oder 🐛 Debug um sie zu öffnen")
+            except Exception as e:
+                print(f"Could not auto-close DevTools: {e}")
+
+        # Run in thread to not block the UI
+        threading.Thread(target=close_devtools, daemon=True).start()
+
     def start_desktop_window(self):
         """Start pywebview window"""
         print("🖥️  Opening desktop window...")
-        
+
         # Create window pointing to localhost
-        window = webview.create_window(
+        self.window = webview.create_window(
             'GearCrate - Star Citizen Inventory Manager',
             f'http://localhost:{self.port}/index.html',
             width=1400,
             height=900,
             resizable=True,
             background_color='#1a1a1a',
-            confirm_close=False
+            confirm_close=False,
+            on_top=False
         )
-        
+
+        # Store window reference in API for DevTools access
+        API.set_webview_window(self.window)
+
+        # Set loaded event handler
+        self.window.events.loaded += self.on_loaded
+
         print("✅ Desktop window ready!")
         print("=" * 60)
         print("📦 GearCrate is running!")
+        print("💡 Drücke F12 oder klicke 🐛 Debug um DevTools zu öffnen")
         print("=" * 60)
-        
-        # Start webview (blocking)
+
+        # Start webview WITH debug mode (enables DevTools)
+        # They will auto-open but we'll close them in the loaded event
         webview.start(debug=True)
         
     def start(self):

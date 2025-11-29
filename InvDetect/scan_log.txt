@@ -1,0 +1,96 @@
+[21:27:40] 
+=== InvDetect - Star Citizen Universal Inventory Scanner ===
+[21:27:40] INSERT → Start Scan | DELETE → Stop | ESC → Exit
+
+[21:27:40] 
+[INFO] Scan mode: 1x1 (Normal)
+[21:27:40] Press INSERT to start scan, or ESC to exit...
+[21:27:42] 
+[WINDOW] Searching for StarCitizen.exe process...
+[21:27:42] [WINDOW] Found StarCitizen.exe (PID: 4244)
+[21:27:42] [WINDOW] Switched to: Star Citizen 
+[21:27:43] [INFO] Output file created: detected_items.txt
+[21:27:43] 
+================================================================================
+[21:27:43] SCAN STARTED - Mode: 1x1 (Normal)
+[21:27:43] Rows/Block: 8 | Step: 97px | Blocks: 3
+[21:27:43] ================================================================================
+
+[21:27:43] Scrolling to top...
+[21:27:46] Reset complete
+[21:27:46] 
+================================================================================
+[21:27:46] PAGE #1
+[21:27:46] ================================================================================
+
+[21:27:46] 
+=== SCANNING BLOCK 1 ===
+[21:27:46]   Block 1: 8 rows, 97px step, drift -0px
+[21:27:48]   → Arcus Gloves Teal (#1)
+[21:27:49]   → Davin Work Gloves Red (#1)
+[21:27:51]   → Adroit Gloves Olive (#1)
+[21:27:52]   → Cody Gloves (#1)
+[21:27:53]   → Adroit Gloves Indigo (#1)
+[21:27:55]   → Baru Gloves Viridian (Left Only) (#1)
+[21:27:56]   → Mercury Gloves (Modified 9T) (#1)
+[21:27:57]   → Debnam Gloves Orange (#1)
+[21:27:59]   → Badami Gloves Deadwood (#1)
+[21:28:00]   → Badami Gloves Deadwood (#2)
+[21:28:01]   → Badami Gloves Deadwood (#3)
+[21:28:03]   → Ventra Gloves Black (#1)
+[21:28:04]   → Davin Work Gloves Red (#2)
+[21:28:05]   → Cody Gloves (#2)
+[21:28:07]   → Ixonia Gloves Green (#1)
+[21:28:08]   → Debnam Gloves Olive (#1)
+[21:28:09]     [RETRY] OCR text found but no DB match → max attempts: 5
+[21:28:09]     [RETRY] 1/5: No DB match for 'Z1uf Gloves'
+[21:28:11]     [RETRY] 2/5: No DB match for 'Z1uf Gloves'
+[21:28:12]     [RETRY] 3/5: No DB match for 'Z1uf Gloves'
+[21:28:13]     [RETRY] 4/5: No DB match for 'Z1uf Gloves'
+[21:28:14]     [FAILED] OCR: 'Z1uf Gloves' - No DB match after 5 attempts
+[21:28:16]   → Arcus Gloves Yellow (#1)
+[21:28:17]   → Debnam Gloves Orange (#2)
+[21:28:18]   → Fractus Gloves Maroon (#1)
+[21:28:19]   → Debnam Gloves (Modified 9T) (#1)
+[21:28:21]   → Badami Gloves Deadwood (#4)
+[21:28:22]   → Davin Work Gloves Seagreen (#1)
+[21:28:24]   → Adroit Gloves Indigo (#2)
+[21:28:25]     [RETRY] OCR text found but no DB match → max attempts: 5
+[21:28:25]     [RETRY] 1/5: No DB match for '@item Name dmc_gloves 01 0il 02'
+[21:28:26]     [RETRY] 2/5: No DB match for '@item Name dmc_gloves 01 0il 02'
+[21:28:28]     [RETRY] 3/5: No DB match for '@item Name dmc_gloves 01 0il 02'
+[21:28:29]     [RETRY] 4/5: No DB match for '@item Name dmc_gloves 01 0il 02'
+[21:28:30]     [FAILED] OCR: '@item Name dmc_gloves 01 0il 02' - No DB match after 5 attempts
+[21:28:32]     [RETRY] OCR text found but no DB match → max attempts: 5
+[21:28:32]     [RETRY] 1/5: No DB match for '@item Name dmc_gloves 01 0il 02'
+[21:28:33]     [RETRY] 2/5: No DB match for '@item Name dmc_gloves 01 0il 02'
+[21:28:34]     [RETRY] 3/5: No DB match for '@item Name dmc_gloves 01 0il 02'
+[21:28:36]     [RETRY] 4/5: No DB match for '@item Name dmc_gloves 01 0il 02'
+[21:28:37]     [FAILED] OCR: '@item Name dmc_gloves 01 0il 02' - No DB match after 5 attempts
+[21:28:39]   → Adroit Gloves Sage (#1)
+[21:28:40]   → Adroit Gloves Olive (#2)
+[21:28:41]   → Adroit Gloves Indigo (#3)
+[21:28:42]   → Badami Gloves Deadwood (#5)
+[21:28:44]   → Ventra Gloves Blue (#1)
+[21:28:45]   → Grappler Gloves Veritas (#1)
+[21:28:45]   Items found
+[21:28:45]   Scrollbar detection (distance: 322px)...
+[21:28:45]   [NO_SCROLLBAR] Scrollbar not found - no scrolling needed
+[21:28:45] [NO_SCROLLBAR] No scrollbar detected - ending scan
+[21:28:45] 
+Scan finished!
+[21:28:45] Mouse stopped
+[21:28:45] 
+[RESULTS] 29 items scanned (19 unique)
+[21:28:45] [RESULTS] Saved to detected_items.txt
+[21:28:45] [NOT DETECTED] 2 new unmatched items (27 total)
+[21:28:45] [NOT DETECTED] Saved to not_detected.md
+[21:28:45] 
+✅ SCAN COMPLETE! See detected_items.txt
+[21:28:45] 
+============================================================
+[21:28:46] 
+[INFO] Scan mode: 1x1 (Normal)
+[21:28:46] Press INSERT to start scan, or ESC to exit...
+[21:28:54] 
+[EXIT] ESC pressed - Exiting scanner...

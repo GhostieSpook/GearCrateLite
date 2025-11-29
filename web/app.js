@@ -16,6 +16,27 @@ let favoriteGearSets = JSON.parse(localStorage.getItem('favoriteGearSets') || '[
 let fuseInstance = null;
 let allItemsForSearch = [];
 
+// Safe translation function wrapper
+function safeT(key, params) {
+    if (typeof window.t === 'function') {
+        try {
+            return window.t(key, params);
+        } catch (e) {
+            console.warn('Translation error:', e);
+        }
+    }
+    // Fallback messages
+    const fallbacks = {
+        'inventoryEmpty': 'Inventar ist leer',
+        'inventoryLoadError': 'Fehler beim Laden des Inventars',
+        'inventoryCategoryEmpty': `Keine Items in Kategorie "${params?.category || ''}"`,
+        'searchNoResults': 'Keine Ergebnisse gefunden',
+        'searchError': 'Suchfehler',
+        'categoryLoadError': 'Fehler beim Laden der Kategorien'
+    };
+    return fallbacks[key] || key;
+}
+
 // ÄNDERUNG 1: Initialwerte aus localStorage laden
 let currentSortBy = localStorage.getItem('sortBy') || 'name';
 let currentSortOrder = localStorage.getItem('sortOrder') || 'asc';
@@ -172,7 +193,7 @@ function getPlaceholderIcon(itemType) {
     );
 
     if (normalizedType) {
-        return `/cache/Placeholder/${normalizedType}.png`;
+        return `/images/Placeholder/${normalizedType}.png`;
     }
 
     return null; // Kein Placeholder verfügbar
@@ -182,8 +203,8 @@ function getPlaceholderIcon(itemType) {
 function getItemIcon(item, size = 'medium') {
     // size kann sein: 'thumb', 'medium', oder 'full'
 
-    // 1. Prüfe ob lokales gecachtes Bild vorhanden (icon_url zeigt auf /cache/)
-    if (item.icon_url && item.icon_url.startsWith('/cache/')) {
+    // 1. Prüfe ob lokales gecachtes Bild vorhanden (icon_url zeigt auf /images/)
+    if (item.icon_url && item.icon_url.startsWith('/images/')) {
         let imageUrl = item.icon_url;
 
         // Konvertiere zu gewünschter Größe
@@ -912,6 +933,72 @@ function setupEventListeners() {
             handleSearch(searchInput.value);
         }
     });
+
+    // Cache clear button (reloads page to clear browser cache)
+    const clearCacheBtn = document.getElementById('clear-cache-btn');
+    if (clearCacheBtn) {
+        clearCacheBtn.addEventListener('click', function() {
+            if (!confirm('Seite neu laden und Browser-Cache leeren?')) {
+                return;
+            }
+            // Hard reload - clears browser cache
+            location.reload(true);
+        });
+    }
+
+    // Debug button (opens DevTools)
+    const debugBtn = document.getElementById('debug-btn');
+    if (debugBtn) {
+        debugBtn.addEventListener('click', async function() {
+            try {
+                const result = await apiCall('open_devtools', {});
+                if (!result.success) {
+                    alert('DevTools konnten nicht geöffnet werden. Nur im Desktop-Modus verfügbar.');
+                }
+            } catch (error) {
+                console.log('Debug button clicked - DevTools not available in browser mode');
+            }
+        });
+    }
+
+    // Clear inventory button (with multiple confirmations)
+    const clearInventoryBtn = document.getElementById('clear-inventory-btn');
+    if (clearInventoryBtn) {
+        clearInventoryBtn.addEventListener('click', async function() {
+            // First confirmation
+            if (!confirm('⚠️ WARNUNG: Dies setzt ALLE Item-Counts im Inventar auf 0!\n\nDie Items bleiben in der Datenbank, aber dein Inventar wird komplett geleert.\n\nMöchtest du wirklich fortfahren?')) {
+                return;
+            }
+
+            // Second confirmation
+            if (!confirm('⚠️ LETZTE WARNUNG!\n\nDies kann NICHT rückgängig gemacht werden!\n\nAlle deine Inventar-Counts werden auf 0 gesetzt.\n\nBist du dir ABSOLUT SICHER?')) {
+                return;
+            }
+
+            // Third confirmation - user must type "YES"
+            const confirmation = prompt('⚠️ FINALE BESTÄTIGUNG\n\nUm fortzufahren, tippe genau "YES" (Großbuchstaben) ein:');
+
+            if (confirmation !== 'YES') {
+                alert('Abgebrochen. Das Inventar wurde NICHT geleert.');
+                return;
+            }
+
+            // All confirmations passed - clear inventory
+            try {
+                const result = await apiCall('clear_inventory', {});
+                if (result.success) {
+                    alert('✅ Inventar wurde geleert!\n\nAlle Item-Counts wurden auf 0 gesetzt.');
+                    // Reload inventory to show empty state
+                    loadInventory();
+                    loadStats();
+                } else {
+                    alert('❌ Fehler beim Leeren des Inventars:\n' + (result.error || 'Unbekannter Fehler'));
+                }
+            } catch (error) {
+                alert('❌ Fehler: ' + error.message);
+            }
+        });
+    }
 }
 
 function setupModalCloseEvents() {
@@ -1028,7 +1115,7 @@ async function loadCategories() {
         console.error('Error loading categories:', error);
         const buttonGrid = document.getElementById('category-buttons');
         if (buttonGrid) {
-            buttonGrid.innerHTML = `<div style="color: #f44; padding: 10px;">${t('categoryLoadError')}</div>`;
+            buttonGrid.innerHTML = `<div style="color: #f44; padding: 10px;">${safeT('categoryLoadError')}</div>`;
         }
     }
 }
@@ -1225,7 +1312,7 @@ async function handleSearch(query) {
     } catch (error) {
         console.error('Search error:', error);
         const resultsDiv = document.getElementById('search-results');
-        resultsDiv.innerHTML = `<div style="padding: 10px; color: #f44;">${t('searchError')}</div>`;
+        resultsDiv.innerHTML = `<div style="padding: 10px; color: #f44;">${safeT('searchError')}</div>`;
         resultsDiv.classList.remove('hidden');
     }
 }
@@ -1384,16 +1471,7 @@ function displaySearchResults(localResults, totalCount) {
     } else {
         // FIXED: Fallback für t() Funktion
         let noResultsText = 'Keine Ergebnisse gefunden';
-        if (typeof t === 'function') {
-            try {
-                const translated = t('searchNoResults');
-                if (typeof translated === 'string') {
-                    noResultsText = translated;
-                }
-            } catch (e) {
-                console.warn('Translation error:', e);
-            }
-        }
+        noResultsText = safeT('searchNoResults');
         
         resultsDiv.innerHTML = `<div style="padding: 10px; color: #888;">${noResultsText}</div>`;
         resultsDiv.classList.remove('hidden');
@@ -1710,7 +1788,7 @@ async function loadInventory() {
     } catch (error) {
         console.error('Error loading inventory:', error);
         const grid = document.getElementById('inventory-grid');
-        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #f44;">${t('inventoryLoadError')}</p>`;
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #f44;">${safeT('inventoryLoadError')}</p>`;
     }
 }
 
@@ -1719,9 +1797,9 @@ function displayInventory(items) {
     grid.innerHTML = '';
 
     if (!items || items.length === 0) {
-        const message = currentCategoryFilter 
-            ? t('inventoryCategoryEmpty', {category: currentCategoryFilter})
-            : t('inventoryEmpty');
+        const message = currentCategoryFilter
+            ? safeT('inventoryCategoryEmpty', {category: currentCategoryFilter})
+            : safeT('inventoryEmpty');
         grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #888;">${message}</p>`;
         return;
     }
@@ -2209,7 +2287,16 @@ function setupImportView() {
     document.getElementById('new-scan-btn')?.addEventListener('click', resetToBeforeScan);
     document.getElementById('undo-btn')?.addEventListener('click', undoRemove);
     document.getElementById('redo-btn')?.addEventListener('click', redoRemove);
-    document.getElementById('open-notdetected-btn')?.addEventListener('click', () => alert('Die Datei not_detected.md befindet sich im InvDetect Ordner.'));
+    document.getElementById('open-notdetected-btn')?.addEventListener('click', async () => {
+        try {
+            const result = await apiCall('open_not_detected_file', {});
+            if (!result.success) {
+                alert('Fehler: ' + (result.error || 'Datei konnte nicht geöffnet werden'));
+            }
+        } catch (error) {
+            alert('Fehler beim Öffnen der Datei: ' + error.message);
+        }
+    });
 }
 
 async function startScan() {
@@ -2312,9 +2399,20 @@ function displayImportResults() {
         filteredItems.forEach(item => {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'import-item';
+
+            // Get placeholder based on item_type
+            const placeholderPath = item.item_type
+                ? `/images/Placeholder/${item.item_type}.png`
+                : '/images/Placeholder/Helmet.png'; // Default fallback
+
+            // Add cache-busting timestamp
+            const cacheBuster = `?v=${Date.now()}`;
+            const imageUrl = item.image_url ? `${item.image_url}${cacheBuster}` : placeholderPath;
+            const fallbackUrl = `${placeholderPath}${cacheBuster}`;
+
             itemDiv.innerHTML = `
                 <button class="import-item-remove" title="Item entfernen">❌</button>
-                <img src="${item.image_url || '/img/placeholder.png'}" alt="${item.name}" onerror="this.src='/img/placeholder.png'">
+                <img src="${imageUrl}" alt="${item.name}" onerror="this.src='${fallbackUrl}'">
                 <div class="import-item-name">${item.name}</div>
                 <div class="import-item-count">Anzahl: ${item.count}</div>
                 ${item.scanned_name !== item.name ? `<div style="font-size: 0.75em; color: #888;">OCR: ${item.scanned_name}</div>` : ''}

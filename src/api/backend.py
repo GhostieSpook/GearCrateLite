@@ -21,6 +21,9 @@ from cache.gear_sets import GearSetsManager
 
 
 class API:
+    # Class variable to store pywebview window reference
+    _webview_window = None
+
     def __init__(self):
         """Initialize API with database, scraper, and cache"""
         self.db = Database()
@@ -28,6 +31,11 @@ class API:
         self.scraper = CStoneScraper()
         self.cache = ImageCache()
         self.gear_sets = GearSetsManager()
+
+    @classmethod
+    def set_webview_window(cls, window):
+        """Set the pywebview window reference (called from main_desktop.py)"""
+        cls._webview_window = window
 
     def _path_to_url(self, path):
         """
@@ -41,14 +49,14 @@ class API:
         # 1. Normalisieren des Pfadtrenners für URL
         path = path.replace('\\', '/')
         
-        # 2. Den Teil ab 'data/cache/images/' finden und durch '/cache/' ersetzen
-        search_string = 'data/cache/images/'
+        # 2. Den Teil ab 'data/images/' finden und durch '/images/' ersetzen
+        search_string = 'data/images/'
         if search_string in path:
             parts = path.split(search_string)
             if len(parts) > 1:
-                return f"/cache/{parts[1]}"
-        
-        # Fallback 
+                return f"/images/{parts[1]}"
+
+        # Fallback
         return path
 
     def search_items_local(self, query):
@@ -218,7 +226,11 @@ class API:
 
     def clear_cache(self):
         """Clear the image cache"""
-        return self.cache.clear_cache()
+        success = self.cache.clear_cache()
+        if success:
+            return {'success': True, 'message': 'Cache erfolgreich geleert'}
+        else:
+            return {'success': False, 'error': 'Fehler beim Leeren des Cache'}
 
     # =========================================================
     # HAUPTFUNKTIONEN FÜR INVENTAR & FAVORITEN
@@ -454,8 +466,9 @@ class API:
         try:
             # Start as CMD window (visible for debugging)
             # Using 'start' command to open new CMD window
+            # /c closes window after script completes
             subprocess.Popen(
-                ['cmd', '/c', 'start', 'cmd', '/k', 'python', main_py],
+                ['cmd', '/c', 'start', 'cmd', '/c', 'python', main_py],
                 cwd=invdetect_dir,
                 creationflags=subprocess.CREATE_NEW_CONSOLE
             )
@@ -521,12 +534,21 @@ class API:
             try:
                 with open(not_detected_file, 'r', encoding='utf-8') as f:
                     content = f.read()
-                    # Parse markdown list
+                    # Parse file - accept lines with or without '-' prefix
                     for line in content.split('\n'):
-                        if line.strip().startswith('-'):
-                            text = line.strip().lstrip('- ').strip()
-                            if text and not text.startswith('#'):
-                                not_found_items.append({'ocr_text': text})
+                        line = line.strip()
+                        # Skip empty lines, comments, and header separators
+                        if not line or line.startswith('#') or line.startswith('---'):
+                            continue
+
+                        # Remove optional '- ' prefix if present
+                        if line.startswith('-'):
+                            text = line.lstrip('- ').strip()
+                        else:
+                            text = line
+
+                        if text:
+                            not_found_items.append({'ocr_text': text})
             except Exception as e:
                 print(f"Error reading not_detected.md: {e}")
 
@@ -587,3 +609,57 @@ class API:
             'success': True,
             'results': import_results
         }
+
+    def open_not_detected_file(self):
+        """
+        Opens the not_detected.md file in file explorer and highlights it
+        """
+        import os
+        import subprocess
+        import platform
+
+        # Get InvDetect directory
+        invdetect_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            'InvDetect'
+        )
+        not_detected_file = os.path.join(invdetect_dir, 'not_detected.md')
+
+        if not os.path.exists(not_detected_file):
+            return {'success': False, 'error': 'not_detected.md nicht gefunden'}
+
+        try:
+            # Windows: Use explorer /select to highlight the file
+            if platform.system() == 'Windows':
+                subprocess.Popen(['explorer', '/select,', os.path.normpath(not_detected_file)])
+            # macOS: Use Finder
+            elif platform.system() == 'Darwin':
+                subprocess.Popen(['open', '-R', not_detected_file])
+            # Linux: Open containing folder
+            else:
+                subprocess.Popen(['xdg-open', os.path.dirname(not_detected_file)])
+
+            return {'success': True}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def open_devtools(self):
+        """
+        Opens/Toggles DevTools in Desktop mode (pywebview)
+        Uses pyautogui to simulate F12 keypress
+        """
+        try:
+            # Simulate F12 keypress to toggle DevTools
+            import pyautogui
+            import threading
+
+            def toggle():
+                pyautogui.press('f12')
+
+            # Run in thread to not block
+            threading.Thread(target=toggle, daemon=True).start()
+            return {'success': True}
+        except ImportError:
+            return {'success': False, 'error': 'pyautogui nicht verfügbar'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}

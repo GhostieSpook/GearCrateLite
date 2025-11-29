@@ -23,8 +23,9 @@ wheels/
 .installed.cfg
 *.egg
 
-# PNG
-data/cache/images/*.png
+# Images - ignore all downloaded images
+data/images/
+data/cache/images/
 
 # IDE
 .vscode/

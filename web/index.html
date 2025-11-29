@@ -171,14 +171,12 @@
                             <h3>🎯 Scan Mode wählen:</h3>
                             <div class="mode-buttons">
                                 <button class="mode-btn active" data-mode="1">
-                                    <div class="mode-icon">📦</div>
-                                    <div class="mode-title">1x1 Items</div>
-                                    <div class="mode-description">Normal (Waffen, Rüstungen, etc.)</div>
+                                    <span class="mode-label">1x1 Items (Helme, Rüstung, Schuhe, etc.)</span>
+                                    <span class="mode-tooltip" title="Standard-Modus für alle Items die 1x1 Slots im Inventar belegen. Dazu gehören: Helme, Körperrüstung, Beinrüstung, Schuhe, Waffen und die meisten anderen Items.">ℹ️</span>
                                 </button>
                                 <button class="mode-btn" data-mode="2">
-                                    <div class="mode-icon">👔</div>
-                                    <div class="mode-title">1x2 Items</div>
-                                    <div class="mode-description">Undersuits</div>
+                                    <span class="mode-label">1x2 Items (Undersuits)</span>
+                                    <span class="mode-tooltip" title="Spezieller Modus für Items die 1x2 Slots belegen. Hauptsächlich für Undersuits (Unterzieher).">ℹ️</span>
                                 </button>
                             </div>
                         </div>
@@ -190,14 +188,16 @@
                                 <li>Wähle den passenden Scan-Modus (1x1 oder 1x2)</li>
                                 <li>Klicke auf "Scan Now"</li>
                                 <li>Ein CMD-Fenster öffnet sich mit "Press INSERT to start scan..."</li>
-                                <li>Wechsle zu Star Citizen und öffne dein Universal Inventory</li>
+                                <li>Wechsle zu Star Citizen und öffne dein Inventory</li>
                                 <li>Drücke INSERT zum Starten</li>
                                 <li>Der Scanner arbeitet automatisch</li>
                                 <li><strong>Abbruch:</strong> Drücke DELETE oder bewege Maus in Bildschirmecke</li>
                                 <li>Nach dem Scan werden die Ergebnisse hier angezeigt</li>
                             </ol>
                             <div class="scan-tip">
-                                💡 <strong>Tipp:</strong> Stelle sicher, dass Star Citizen im Vollbild-Modus läuft (1920x1080) für beste Ergebnisse.
+                                <h5><strong>Tipp:</strong> Stelle sicher, dass Star Citizen im Vollbild-Modus läuft (1920x1080) für beste Ergebnisse.</h5>
+                                <h5><strong>Tipp:</strong> Du kannst im Inventar unter "Custom" dir spezielle Items auflisten lassen</h5>
+                                <h5><strong>Tipp:</strong> Stelle sicher, dass du nochmal auf "Custom" klickst nach dem Auflisten. (Links kein Fenster mehr)</h5>
                             </div>
                         </div>
 
@@ -294,6 +294,19 @@
             
             <!-- Kategorie-Statistiken (dynamisch) -->
             <div id="category-stats" class="category-stats"></div>
+
+            <!-- Cache Actions -->
+            <div class="cache-actions">
+                <button id="clear-cache-btn" class="cache-btn" title="Lädt die Seite neu und leert den Browser-Cache">
+                    🗑️ Cache leeren
+                </button>
+                <button id="debug-btn" class="debug-btn" title="Öffnet die Developer Tools">
+                    🐛 Debug
+                </button>
+                <button id="clear-inventory-btn" class="clear-inventory-btn" title="⚠️ Setzt alle Item-Counts im Inventar auf 0">
+                    💀 Inventar leeren
+                </button>
+            </div>
         </section>
     </div>
 

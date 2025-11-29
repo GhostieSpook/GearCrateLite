@@ -8,14 +8,14 @@ from PIL import Image
 
 
 class ImageCache:
-    def __init__(self, cache_dir='data/cache/images'):
+    def __init__(self, cache_dir='data/images'):
         """Initialize image cache"""
         # Convert to absolute path
         if not os.path.isabs(cache_dir):
             # Get the project root directory
             project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             cache_dir = os.path.join(project_root, cache_dir)
-        
+
         self.cache_dir = cache_dir
         os.makedirs(cache_dir, exist_ok=True)
         print(f"Image cache initialized at: {self.cache_dir}")

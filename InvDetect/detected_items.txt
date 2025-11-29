@@ -1,0 +1,19 @@
+3, Adroit Gloves Indigo
+2, Adroit Gloves Olive
+1, Adroit Gloves Sage
+1, Arcus Gloves Teal
+1, Arcus Gloves Yellow
+5, Badami Gloves Deadwood
+1, Baru Gloves Viridian (Left Only)
+2, Cody Gloves
+2, Davin Work Gloves Red
+1, Davin Work Gloves Seagreen
+1, Debnam Gloves (Modified 9T)
+1, Debnam Gloves Olive
+2, Debnam Gloves Orange
+1, Fractus Gloves Maroon
+1, Grappler Gloves Veritas
+1, Ixonia Gloves Green
+1, Mercury Gloves (Modified 9T)
+1, Ventra Gloves Black
+1, Ventra Gloves Blue
