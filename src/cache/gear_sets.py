@@ -122,16 +122,44 @@ class GearSetsManager:
             arms_name = set_def['arms']
             legs_name = set_def['legs']
         
-        # Hole jedes Teil aus der DB
+        # Hole jedes Teil aus der DB mit 3-Tier Fuzzy Matching
         for part_type, part_name in [
             ('helmet', helmet_name),
             ('core', core_name),
             ('arms', arms_name),
             ('legs', legs_name)
         ]:
+            # Strategie 1: Exakter Match
             cursor.execute("SELECT * FROM items WHERE name = ?", (part_name,))
             row = cursor.fetchone()
-            
+
+            # Strategie 2: Falls nicht gefunden und variant vorhanden, versuche ohne Variant
+            if not row and variant:
+                part_name_no_variant = part_name.replace(f" {variant}", "").strip()
+                cursor.execute("SELECT * FROM items WHERE name = ?", (part_name_no_variant,))
+                row = cursor.fetchone()
+
+            # Strategie 3: Fuzzy Match mit LIKE
+            if not row:
+                # Extrahiere Set-Basis (z.B. "ADP" aus "ADP Helmet Base")
+                set_base = set_name
+
+                # Map part_type zu korrekten Namen
+                part_type_map = {
+                    'helmet': 'Helmet',
+                    'core': 'Core',
+                    'arms': 'Arms',
+                    'legs': 'Legs'
+                }
+                part_keyword = part_type_map.get(part_type, '')
+
+                # Suche nach Items die den Set-Namen UND Part-Typ enthalten
+                cursor.execute(
+                    "SELECT * FROM items WHERE name LIKE ? AND name LIKE ? LIMIT 1",
+                    (f"{set_base}%", f"%{part_keyword}%")
+                )
+                row = cursor.fetchone()
+
             if row:
                 # Konvertiere zu Dict
                 columns = [desc[0] for desc in cursor.description]
@@ -139,7 +167,7 @@ class GearSetsManager:
             else:
                 # Teil nicht gefunden
                 pieces[part_type] = None
-        
+
         return pieces
     
     def get_all_sets_summary(self, db_connection):

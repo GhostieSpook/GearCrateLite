@@ -21,7 +21,7 @@ from cache.gear_sets import GearSetsManager
 
 
 class API:
-    # Class variable to store pywebview window reference
+    # Class-level variable to store webview window reference
     _webview_window = None
 
     def __init__(self):
@@ -34,30 +34,82 @@ class API:
 
     @classmethod
     def set_webview_window(cls, window):
-        """Set the pywebview window reference (called from main_desktop.py)"""
+        """Store reference to webview window for DevTools access"""
         cls._webview_window = window
+        print("✅ Webview window reference stored")
+
+    def open_devtools(self):
+        """Open DevTools in the webview window (can be called as instance or class method)"""
+        # Use class variable to access window
+        if API._webview_window is None:
+            print("⚠️ No webview window reference available")
+            return {'success': False, 'error': 'No webview window available'}
+
+        try:
+            # Trigger F12 keypress to open DevTools
+            import pyautogui
+            pyautogui.press('f12')
+            print("✅ DevTools opened (F12 pressed)")
+            return {'success': True}
+        except Exception as e:
+            print(f"⚠️ Could not open DevTools: {e}")
+            return {'success': False, 'error': str(e)}
 
     def _path_to_url(self, path):
         """
-        Converts an absolute cache path (containing category subfolders) 
-        to a relative URL path usable by the browser server (starting with /cache/).
-        (FIXED for subfolders)
+        Converts an absolute cache path (containing category subfolders)
+        to a relative URL path usable by the browser server (starting with /images/).
+        Returns None if the file doesn't exist (so frontend can show placeholder).
         """
         if not path:
             return None
-            
+
         # 1. Normalisieren des Pfadtrenners für URL
-        path = path.replace('\\', '/')
-        
-        # 2. Den Teil ab 'data/images/' finden und durch '/images/' ersetzen
-        search_string = 'data/images/'
-        if search_string in path:
-            parts = path.split(search_string)
+        normalized_path = path.replace('\\', '/')
+
+        # 2. Bestimme den absoluten Dateipfad für Existenzprüfung
+        absolute_path = None
+        if os.path.isabs(path):
+            # Ist bereits ein absoluter Pfad
+            absolute_path = path
+        else:
+            # Relativer Pfad - versuche ihn zu konstruieren
+            # Annahme: Relativer Pfad ist relativ zum Projektroot
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            absolute_path = os.path.join(project_root, path)
+
+        # 3. Prüfe ob Datei existiert
+        if absolute_path and not os.path.exists(absolute_path):
+            # Datei existiert nicht -> None zurückgeben für Placeholder
+            return None
+
+        # 4. Versuche verschiedene Muster zu finden und zu ersetzen
+        # Pattern 1: data/cache/images/ -> /cache/
+        if 'data/cache/images/' in normalized_path:
+            parts = normalized_path.split('data/cache/images/')
+            if len(parts) > 1:
+                return f"/cache/{parts[1]}"
+
+        # Pattern 2: data/images/ -> /images/
+        if 'data/images/' in normalized_path:
+            parts = normalized_path.split('data/images/')
             if len(parts) > 1:
                 return f"/images/{parts[1]}"
 
-        # Fallback
-        return path
+        # Pattern 3: Wenn es ein absoluter Pfad ist, extrahiere alles nach 'data/'
+        if '/data/' in normalized_path or 'data/' in normalized_path:
+            # Finde den Index von 'data/' und nimm alles danach
+            data_index = normalized_path.find('data/')
+            if data_index != -1:
+                relative_part = normalized_path[data_index + 5:]  # Skip 'data/'
+                return f"/images/{relative_part}"
+
+        # Fallback: Wenn der Pfad mit /images/ oder /cache/ beginnt, behalte ihn
+        if normalized_path.startswith('/images/') or normalized_path.startswith('/cache/'):
+            return normalized_path
+
+        # Letzter Fallback
+        return normalized_path
 
     def search_items_local(self, query):
         """
@@ -181,17 +233,11 @@ class API:
         return item
         
     def get_categories(self):
-        """Retrieve all distinct item types for filters (from all items in DB, not just inventory)"""
-        # Get all unique categories from database (including items with count=0)
-        all_items = self.operations.get_all_items(include_zero_count=True)
-        categories = set()
-
-        for item in all_items:
-            item_type = item.get('item_type')
-            if item_type and item_type != 'Favorites':
-                categories.add(item_type)
-
-        return sorted(list(categories))
+        """Retrieve all distinct item types for filters"""
+        stats = self.get_category_stats()
+        # 'Favorites' aus der Liste der normalen Kategorien filtern
+        types = [t for t in stats.get('category_counts', {}).keys() if t != 'Favorites']
+        return sorted(types)
 
     def get_category_stats(self):
         """Get inventory stats by item category"""
@@ -232,11 +278,7 @@ class API:
 
     def clear_cache(self):
         """Clear the image cache"""
-        success = self.cache.clear_cache()
-        if success:
-            return {'success': True, 'message': 'Cache erfolgreich geleert'}
-        else:
-            return {'success': False, 'error': 'Fehler beim Leeren des Cache'}
+        return self.cache.clear_cache()
 
     # =========================================================
     # HAUPTFUNKTIONEN FÜR INVENTAR & FAVORITEN
@@ -365,18 +407,19 @@ class API:
                         'name': piece['name'],
                         'count': piece.get('count', 0),
                         'owned': piece.get('count', 0) > 0,
-                        'image_url': None
+                        'image_url': None,
+                        'item_type': piece.get('item_type', part_type)  # Include item_type for placeholder
                     }
-                    
+
                     # Bild-URL hinzufügen
                     if piece.get('image_path'):
                         piece_data['image_url'] = self._path_to_url(piece['image_path'])
                     elif piece.get('image_url'):
                         piece_data['image_url'] = piece['image_url']
-                    
+
                     if piece_data['owned']:
                         owned_count += 1
-                    
+
                     result['pieces'][part_type] = piece_data
                 else:
                     # Teil nicht in DB gefunden
@@ -385,7 +428,8 @@ class API:
                         'name': None,
                         'count': 0,
                         'owned': False,
-                        'image_url': None
+                        'image_url': None,
+                        'item_type': part_type  # Include item_type for placeholder
                     }
             
             result['owned_count'] = owned_count
@@ -425,259 +469,3 @@ class API:
             import traceback
             traceback.print_exc()
             raise e
-
-    # =========================================================
-    # INVENTORY SCANNER FUNKTIONEN
-    # =========================================================
-
-    def set_scan_mode(self, mode):
-        """
-        Sets the scan mode in InvDetect/config.py
-        mode: 1 (1x1) or 2 (1x2)
-        """
-        import os
-
-        config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'InvDetect', 'config.py')
-
-        try:
-            # Read current config
-            with open(config_path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-
-            # Update SCAN_MODE line
-            for i, line in enumerate(lines):
-                if line.strip().startswith('SCAN_MODE ='):
-                    lines[i] = f'SCAN_MODE = {mode}\n'
-                    break
-
-            # Write back
-            with open(config_path, 'w', encoding='utf-8') as f:
-                f.writelines(lines)
-
-            return {'success': True, 'mode': mode}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
-
-    def start_scanner(self):
-        """
-        Starts the InvDetect scanner as a subprocess (CMD window)
-        """
-        import subprocess
-        import os
-
-        # Path to InvDetect main.py
-        invdetect_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'InvDetect')
-        main_py = os.path.join(invdetect_dir, 'main.py')
-
-        try:
-            # Start as CMD window (visible for debugging)
-            # Using 'start' command to open new CMD window
-            # /c closes window after script completes
-            subprocess.Popen(
-                ['cmd', '/c', 'start', 'cmd', '/c', 'python', main_py],
-                cwd=invdetect_dir,
-                creationflags=subprocess.CREATE_NEW_CONSOLE
-            )
-
-            return {'success': True, 'message': 'Scanner started'}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
-
-    def get_scan_results(self):
-        """
-        Reads detected_items.txt and not_detected.md, matches items with database
-        Returns: {found: [...], not_found: [...]}
-        """
-        import os
-        from rapidfuzz import fuzz, process
-
-        invdetect_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'InvDetect')
-        detected_file = os.path.join(invdetect_dir, 'detected_items.txt')
-        not_detected_file = os.path.join(invdetect_dir, 'not_detected.md')
-
-        found_items = []
-        not_found_items = []
-
-        # Read detected_items.txt
-        if os.path.exists(detected_file):
-            try:
-                with open(detected_file, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        line = line.strip()
-                        if not line or line.startswith('#'):
-                            continue
-
-                        # Format: "count, item_name"
-                        parts = line.split(',', 1)
-                        if len(parts) == 2:
-                            count = int(parts[0].strip())
-                            item_name = parts[1].strip()
-
-                            # Fuzzy match with database
-                            all_items = self.operations.get_all_items(include_zero_count=True)
-                            item_names = [item['name'] for item in all_items]
-
-                            match = process.extractOne(item_name, item_names, scorer=fuzz.ratio)
-
-                            if match and match[1] >= 75:  # 75% match threshold
-                                matched_name = match[0]
-                                db_item = next((item for item in all_items if item['name'] == matched_name), None)
-
-                                if db_item:
-                                    found_items.append({
-                                        'name': db_item['name'],
-                                        'scanned_name': item_name,
-                                        'count': count,
-                                        'item_type': db_item.get('item_type'),
-                                        'image_url': self._path_to_url(db_item.get('image_path')) if db_item.get('image_path') else db_item.get('image_url'),
-                                        'db_id': db_item.get('id')
-                                    })
-            except Exception as e:
-                print(f"Error reading detected_items.txt: {e}")
-
-        # Read not_detected.md
-        if os.path.exists(not_detected_file):
-            try:
-                with open(not_detected_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                    # Parse file - accept lines with or without '-' prefix
-                    for line in content.split('\n'):
-                        line = line.strip()
-                        # Skip empty lines, comments, and header separators
-                        if not line or line.startswith('#') or line.startswith('---'):
-                            continue
-
-                        # Remove optional '- ' prefix if present
-                        if line.startswith('-'):
-                            text = line.lstrip('- ').strip()
-                        else:
-                            text = line
-
-                        if text:
-                            not_found_items.append({'ocr_text': text})
-            except Exception as e:
-                print(f"Error reading not_detected.md: {e}")
-
-        return {
-            'success': True,
-            'found': found_items,
-            'not_found': not_found_items
-        }
-
-    def import_scanned_items(self, items):
-        """
-        Imports scanned items into inventory
-        items: [{name, count}, ...]
-        For existing items: adds to count
-        For new items: should not create (items must exist in DB first)
-        """
-        import_results = []
-
-        print(f"\n🔄 Importing {len(items)} scanned items...")
-
-        for item_data in items:
-            item_name = item_data.get('name')
-            scanned_count = item_data.get('count', 1)
-
-            try:
-                # Check if item exists in database
-                existing = self.operations.get_item_by_name(item_name)
-
-                print(f"📦 '{item_name}': scanned={scanned_count}, existing={existing is not None}")
-
-                if existing:
-                    # Item exists → add to count
-                    current_count = existing.get('count', 0)
-                    new_count = current_count + scanned_count
-
-                    result = self.operations.update_item_count(item_name, new_count)
-
-                    print(f"   ✅ Updated: {current_count} + {scanned_count} = {new_count}, success={result.get('success')}")
-
-                    import_results.append({
-                        'name': item_name,
-                        'action': 'updated',
-                        'old_count': current_count,
-                        'new_count': new_count,
-                        'success': result.get('success', False)
-                    })
-                else:
-                    # Item doesn't exist in database → skip (should not happen)
-                    print(f"   ⚠️  Item not found in database, skipping")
-                    import_results.append({
-                        'name': item_name,
-                        'action': 'skipped',
-                        'error': 'Item not in database',
-                        'success': False
-                    })
-
-            except Exception as e:
-                print(f"   ❌ Error: {e}")
-                import_results.append({
-                    'name': item_name,
-                    'action': 'error',
-                    'error': str(e),
-                    'success': False
-                })
-
-        successful = sum(1 for r in import_results if r.get('success'))
-        print(f"✅ Import complete: {successful}/{len(items)} successful\n")
-
-        return {
-            'success': True,
-            'results': import_results
-        }
-
-    def open_not_detected_file(self):
-        """
-        Opens the not_detected.md file in file explorer and highlights it
-        """
-        import os
-        import subprocess
-        import platform
-
-        # Get InvDetect directory
-        invdetect_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-            'InvDetect'
-        )
-        not_detected_file = os.path.join(invdetect_dir, 'not_detected.md')
-
-        if not os.path.exists(not_detected_file):
-            return {'success': False, 'error': 'not_detected.md nicht gefunden'}
-
-        try:
-            # Windows: Use explorer /select to highlight the file
-            if platform.system() == 'Windows':
-                subprocess.Popen(['explorer', '/select,', os.path.normpath(not_detected_file)])
-            # macOS: Use Finder
-            elif platform.system() == 'Darwin':
-                subprocess.Popen(['open', '-R', not_detected_file])
-            # Linux: Open containing folder
-            else:
-                subprocess.Popen(['xdg-open', os.path.dirname(not_detected_file)])
-
-            return {'success': True}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
-
-    def open_devtools(self):
-        """
-        Opens/Toggles DevTools in Desktop mode (pywebview)
-        Uses pyautogui to simulate F12 keypress
-        """
-        try:
-            # Simulate F12 keypress to toggle DevTools
-            import pyautogui
-            import threading
-
-            def toggle():
-                pyautogui.press('f12')
-
-            # Run in thread to not block
-            threading.Thread(target=toggle, daemon=True).start()
-            return {'success': True}
-        except ImportError:
-            return {'success': False, 'error': 'pyautogui nicht verfügbar'}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}

@@ -675,74 +675,6 @@ section h2 {
     font-weight: bold;
 }
 
-/* Cache Actions */
-.cache-actions {
-    margin-top: 20px;
-    text-align: center;
-    padding-top: 15px;
-    border-top: 1px solid #333;
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-}
-
-.cache-btn, .debug-btn, .clear-inventory-btn {
-    background: rgba(255, 107, 107, 0.2);
-    border: 2px solid #ff6b6b;
-    color: #fff;
-    padding: 10px 25px;
-    font-size: 0.95em;
-    font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.debug-btn {
-    background: rgba(107, 149, 255, 0.2);
-    border-color: #6b95ff;
-}
-
-.clear-inventory-btn {
-    background: rgba(139, 0, 0, 0.3);
-    border-color: #8b0000;
-    animation: pulse-danger 2s infinite;
-}
-
-@keyframes pulse-danger {
-    0%, 100% {
-        box-shadow: 0 0 5px rgba(139, 0, 0, 0.3);
-    }
-    50% {
-        box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
-    }
-}
-
-.cache-btn:hover {
-    background: rgba(255, 107, 107, 0.3);
-    border-color: #ff8a8a;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-}
-
-.debug-btn:hover {
-    background: rgba(107, 149, 255, 0.3);
-    border-color: #8aabff;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(107, 149, 255, 0.3);
-}
-
-.clear-inventory-btn:hover {
-    background: rgba(139, 0, 0, 0.5);
-    border-color: #ff0000;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(255, 0, 0, 0.6);
-}
-
-.cache-btn:active, .debug-btn:active, .clear-inventory-btn:active {
-    transform: translateY(0);
-}
-
 /* Modal */
 .modal {
     display: none;
@@ -1196,7 +1128,6 @@ textarea {
 }
 
 .gearset-card {
-    position: relative;
     background: #222;
     border-radius: 8px;
     padding: 15px;
@@ -1207,19 +1138,6 @@ textarea {
 .gearset-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-}
-
-.gearset-card:hover .gearset-favorite-btn {
-    opacity: 1;
-}
-
-.gearset-favorite-btn {
-    opacity: 0.3;
-    transition: opacity 0.2s ease;
-}
-
-.gearset-favorite-btn.is-favorite {
-    opacity: 1 !important;
 }
 
 /* Rahmenfarben */
@@ -1258,7 +1176,6 @@ textarea {
 }
 
 .gearset-part {
-    position: relative;
     background: #1a1a1a;
     border-radius: 6px;
     padding: 10px;
@@ -1271,10 +1188,6 @@ textarea {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
     border-color: #00d9ff;
-}
-
-.gearset-part:hover .favorite-btn {
-    opacity: 1;
 }
 
 .gearset-part.owned { border-color: #4CAF50; }
@@ -1419,23 +1332,20 @@ textarea {
 }
 
 .mode-buttons {
-    display: flex;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
     margin-bottom: 20px;
-    flex-wrap: wrap;
 }
 
 .mode-btn {
     background: rgba(0, 0, 0, 0.4);
     border: 2px solid #555;
-    border-radius: 6px;
-    padding: 10px 15px;
+    border-radius: 10px;
+    padding: 20px;
     cursor: pointer;
     transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.95em;
+    text-align: center;
 }
 
 .mode-btn:hover {
@@ -1450,21 +1360,21 @@ textarea {
     box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
 }
 
-.mode-label {
-    color: #fff;
-    font-weight: 500;
+.mode-icon {
+    font-size: 3em;
+    margin-bottom: 10px;
 }
 
-.mode-tooltip {
+.mode-title {
     color: #00d9ff;
-    font-size: 1.1em;
-    cursor: help;
-    transition: all 0.2s;
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 5px;
 }
 
-.mode-tooltip:hover {
-    transform: scale(1.2);
-    color: #00ffff;
+.mode-description {
+    color: #aaa;
+    font-size: 0.9em;
 }
 
 /* Scan Instructions */
@@ -1603,45 +1513,6 @@ textarea {
 .import-results-section h3 {
     color: #00d9ff;
     margin-bottom: 15px;
-}
-
-/* Pagination Controls */
-.pagination-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin: 15px 0;
-    padding: 10px;
-    background: rgba(0, 217, 255, 0.1);
-    border-radius: 6px;
-}
-
-.pagination-btn {
-    background: rgba(0, 217, 255, 0.2);
-    border: 1px solid #00d9ff;
-    color: #00d9ff;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.3s;
-}
-
-.pagination-btn:hover:not(:disabled) {
-    background: rgba(0, 217, 255, 0.3);
-    transform: translateY(-2px);
-}
-
-.pagination-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-.pagination-info {
-    color: #00d9ff;
-    font-size: 14px;
-    font-weight: 500;
 }
 
 /* Import Grid (similar to inventory grid) */

@@ -1,6 +1,54 @@
 // GearCrate - Frontend Logic with Sorting & Filtering
 // Image sizes: Thumb (search) → Medium (inventory) → Full (modal)
 
+// Helper function to get appropriate placeholder icon based on item type
+function getItemIcon(item, size = 'medium') {
+    // Check both icon_url and image_url for local paths
+    let localImageUrl = null;
+
+    if (item.icon_url && item.icon_url.startsWith('/images/')) {
+        localImageUrl = item.icon_url;
+    } else if (item.image_url && item.image_url.startsWith('/images/')) {
+        localImageUrl = item.image_url;
+    }
+
+    if (localImageUrl) {
+        // Modify path for medium size if needed
+        if (size === 'medium' && localImageUrl.endsWith('.png')) {
+            return localImageUrl.replace(/\.png$/, '_medium.png');
+        }
+        return localImageUrl;
+    }
+
+    // No local image - return placeholder path based on item type
+    const partTypeMapping = {
+        'helmet': 'Helmet',
+        'core': 'Torso',
+        'torso': 'Torso',
+        'arms': 'Arms',
+        'legs': 'Legs',
+        'backpack': 'Backpack',
+        'weapon': 'Weapon',
+        'ship weapon': 'Weapon',
+        'ship': 'Ship',
+        'ground vehicle': 'GroundVehicle',
+        'armor': 'Armor',
+        'undersuit': 'Undersuit',
+        'jacket': 'Jacket',
+        'pants': 'Pants',
+        'shirt': 'Shirt',
+        'shoes': 'Shoes',
+        'hat': 'Hat',
+        'hands': 'Hands',
+        'tool': 'Tool'
+    };
+
+    const itemType = item.item_type || item.type || 'Unknown';
+    const mappedType = partTypeMapping[itemType.toLowerCase()] || 'Placeholder';
+
+    return `/images/Placeholder/${mappedType}.png`;
+}
+
 let currentItem = null;
 let searchTimeout = null;
 let selectedItemForModal = null;
@@ -10,36 +58,10 @@ let currentView = localStorage.getItem('currentView') || 'inventory';
 let currentGearSetsFilter = 'all';
 let currentSelectedSet = 'ADP';
 let loadedSets = {}; // Speichert geladene Sets
-let favoriteGearSets = JSON.parse(localStorage.getItem('favoriteGearSets') || '[]'); // Array von "SetName Variant"
 
 // NEU: Fuse.js Search Engine
 let fuseInstance = null;
 let allItemsForSearch = [];
-
-// Safe translation function wrapper
-function safeT(key, params) {
-    if (typeof window.t === 'function') {
-        try {
-            const result = window.t(key, params);
-            // CRITICAL: Ensure we only return strings, never functions or objects
-            if (typeof result === 'string' && result.length > 0) {
-                return result;
-            }
-        } catch (e) {
-            console.warn('Translation error:', e);
-        }
-    }
-    // Fallback messages (always return a string)
-    const fallbacks = {
-        'inventoryEmpty': 'Inventar ist leer',
-        'inventoryLoadError': 'Fehler beim Laden des Inventars',
-        'inventoryCategoryEmpty': `Keine Items in Kategorie "${params?.category || ''}"`,
-        'searchNoResults': 'Keine Ergebnisse gefunden',
-        'searchError': 'Suchfehler',
-        'categoryLoadError': 'Fehler beim Laden der Kategorien'
-    };
-    return fallbacks[key] || key;
-}
 
 // ÄNDERUNG 1: Initialwerte aus localStorage laden
 let currentSortBy = localStorage.getItem('sortBy') || 'name';
@@ -154,130 +176,6 @@ async function reloadInvalidatedSets() {
         
         displayGearSets();
     }
-}
-
-// FAVORITE GEAR SETS HELPERS
-function getGearSetKey(setName, variant) {
-    return `${setName}|||${variant}`;
-}
-
-function isGearSetFavorite(setName, variant) {
-    const key = getGearSetKey(setName, variant);
-    return favoriteGearSets.includes(key);
-}
-
-function toggleGearSetFavorite(setName, variant) {
-    const key = getGearSetKey(setName, variant);
-    const index = favoriteGearSets.indexOf(key);
-
-    if (index >= 0) {
-        // Remove from favorites
-        favoriteGearSets.splice(index, 1);
-    } else {
-        // Add to favorites
-        favoriteGearSets.push(key);
-    }
-
-    // Save to localStorage
-    localStorage.setItem('favoriteGearSets', JSON.stringify(favoriteGearSets));
-    console.log(`⭐ Gear Set ${setName} ${variant} favorite: ${index < 0}`);
-}
-
-// PLACEHOLDER ICON HELPER
-function getPlaceholderIcon(itemType) {
-    const validTypes = [
-        'Arms', 'Backpack', 'Eyes', 'Hands', 'Hat', 'Helmet',
-        'Jacket', 'Jumpsuit', 'Legs', 'Pants', 'Shirt', 'Shoes',
-        'Torso', 'Undersuit'
-    ];
-
-    // Normalize item type (case-insensitive match)
-    const normalizedType = validTypes.find(t =>
-        t.toLowerCase() === (itemType || '').toLowerCase()
-    );
-
-    if (normalizedType) {
-        return `/images/Placeholder/${normalizedType}.png`;
-    }
-
-    return null; // Kein Placeholder verfügbar
-}
-
-// GET ITEM ICON - Intelligente Fallback-Logik
-function getItemIcon(item, size = 'medium') {
-    // size kann sein: 'thumb', 'medium', oder 'full'
-
-    // 1. Prüfe ob lokales gecachtes Bild vorhanden
-    // Prüfe sowohl icon_url als auch image_url (für Gear-Sets)
-    let localImageUrl = null;
-
-    if (item.icon_url && item.icon_url.startsWith('/images/')) {
-        localImageUrl = item.icon_url;
-    } else if (item.image_url && item.image_url.startsWith('/images/')) {
-        localImageUrl = item.image_url;
-    }
-
-    if (localImageUrl) {
-        // Konvertiere zu gewünschter Größe
-        if (size === 'thumb' && localImageUrl.endsWith('.png')) {
-            return localImageUrl.replace(/\.png$/, '_thumb.png');
-        } else if (size === 'medium' && localImageUrl.endsWith('.png')) {
-            return localImageUrl.replace(/\.png$/, '_medium.png');
-        }
-
-        return localImageUrl;
-    }
-
-    // 2. Kein lokales Bild → Versuche Placeholder
-    // (Auch wenn image_url existiert, wenn es nicht lokal gecacht ist, zeigen wir Placeholder)
-    // Spezial-Fall: 'core' → 'Torso' für Gear-Sets
-    let itemType = item.item_type || item.type;
-    if (!itemType && item.partType) {
-        itemType = item.partType === 'core' ? 'Torso' : item.partType;
-    } else if (itemType && itemType.toLowerCase() === 'core') {
-        itemType = 'Torso';
-    }
-
-    // Map common part types to proper capitalized names
-    const partTypeMapping = {
-        'helmet': 'Helmet',
-        'core': 'Torso',
-        'torso': 'Torso',
-        'arms': 'Arms',
-        'legs': 'Legs',
-        'backpack': 'Backpack',
-        'undersuit': 'Undersuit',
-        'hat': 'Hat',
-        'eyes': 'Eyes',
-        'hands': 'Hands',
-        'jacket': 'Jacket',
-        'jumpsuit': 'Jumpsuit',
-        'pants': 'Pants',
-        'shirt': 'Shirt',
-        'shoes': 'Shoes'
-    };
-
-    // Try to map itemType to proper capitalized name
-    if (itemType) {
-        const mappedType = partTypeMapping[itemType.toLowerCase()];
-        if (mappedType) {
-            itemType = mappedType;
-        }
-    }
-
-    const placeholderPath = getPlaceholderIcon(itemType);
-
-    // DEBUG: Log placeholder resolution
-    if (item.partType && !placeholderPath) {
-        console.log(`⚠️  No placeholder found for: partType=${item.partType}, itemType=${itemType}`);
-    }
-
-    if (placeholderPath) {
-        return placeholderPath;
-    }
-
-    // 3. Kein Placeholder → null (Aufrufer zeigt dann 🎮)
-    return null;
 }
 
 // GEAR SETS LADEN
@@ -461,23 +359,18 @@ function displayGearSets() {
     }
     
     let variantsToShow = variants;
-
-    // Filter nach Completion-Status oder Favorites
+    
+    // Filter nach Completion-Status
     if (currentGearSetsFilter !== 'all') {
         variantsToShow = variantsToShow.filter(v => {
             const ownedCount = v.owned_count;
-
-            // Favorites Filter: Set muss in localStorage favorites sein
-            if (currentGearSetsFilter === 'favorites') {
-                return isGearSetFavorite(v.set_name, v.variant);
-            }
-
+            
             if (currentGearSetsFilter === 'none') return ownedCount === 0;
             if (currentGearSetsFilter === '1') return ownedCount === 1;
             if (currentGearSetsFilter === '2') return ownedCount === 2;
             if (currentGearSetsFilter === '3') return ownedCount === 3;
             if (currentGearSetsFilter === 'all-parts') return ownedCount === 4;
-
+            
             return true;
         });
     }
@@ -504,14 +397,13 @@ function updateFilterButtonCounts(variants) {
     // Zähle Sets nach Kategorie
     const counts = {
         all: variants.length,
-        favorites: 0,
         none: 0,
         one: 0,
         two: 0,
         three: 0,
         complete: 0
     };
-
+    
     variants.forEach(v => {
         const owned = v.owned_count;
         if (owned === 0) counts.none++;
@@ -519,28 +411,19 @@ function updateFilterButtonCounts(variants) {
         else if (owned === 2) counts.two++;
         else if (owned === 3) counts.three++;
         else if (owned === 4) counts.complete++;
-
-        // Count favorites (aus localStorage)
-        if (isGearSetFavorite(v.set_name, v.variant)) {
-            counts.favorites++;
-        }
     });
-
+    
     // Update Button-Texte
     const filterBtns = document.querySelectorAll('.filter-btn');
     filterBtns.forEach(btn => {
         const filter = btn.dataset.filter;
         let count = 0;
         let baseText = '';
-
+        
         switch(filter) {
             case 'all':
                 count = counts.all;
                 baseText = 'Alle';
-                break;
-            case 'favorites':
-                count = counts.favorites;
-                baseText = '⭐ Favorites';
                 break;
             case 'none':
                 count = counts.none;
@@ -563,12 +446,12 @@ function updateFilterButtonCounts(variants) {
                 baseText = '🟢 ALL (4/4)';
                 break;
         }
-
+        
         // Update Button-Text mit Count
         btn.textContent = `${baseText} (${count})`;
     });
-
-    console.log(`✅ Filter Counts: Alle=${counts.all}, Favorites=${counts.favorites}, None=${counts.none}, 1/4=${counts.one}, 2/4=${counts.two}, 3/4=${counts.three}, 4/4=${counts.complete}`);
+    
+    console.log(`✅ Filter Counts: Alle=${counts.all}, None=${counts.none}, 1/4=${counts.one}, 2/4=${counts.two}, 3/4=${counts.three}, 4/4=${counts.complete}`);
 }
 
 // NEU: Refresh ein spezifisches Set nach Item-Änderung (OPTIMIERT)
@@ -682,14 +565,14 @@ function createGearSetCard(setData) {
     // Header
     const header = document.createElement('div');
     header.className = 'gearset-header';
-
+    
     const name = document.createElement('div');
     name.className = 'gearset-name';
     name.textContent = `${setData.set_name} ${setData.variant}`;
-
+    
     const status = document.createElement('div');
     status.className = 'gearset-status';
-
+    
     if (ownedCount === 4) {
         status.classList.add('status-complete');
         status.textContent = 'ALL (4/4)';
@@ -700,34 +583,9 @@ function createGearSetCard(setData) {
         status.classList.add('status-partial');
         status.textContent = `${ownedCount}/4`;
     }
-
+    
     header.appendChild(name);
     header.appendChild(status);
-
-    // Favorite Button for the whole set
-    const setFavBtn = document.createElement('button');
-    setFavBtn.className = 'favorite-btn gearset-favorite-btn';
-
-    // Check if set is favorite (from localStorage)
-    const isFavorite = isGearSetFavorite(setData.set_name, setData.variant);
-
-    if (isFavorite) {
-        setFavBtn.classList.add('is-favorite');
-        setFavBtn.textContent = '⭐';
-    } else {
-        setFavBtn.textContent = '☆';
-    }
-
-    // Toggle favorite for this set (localStorage only, no API calls)
-    setFavBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleGearSetFavorite(setData.set_name, setData.variant);
-
-        // Re-render the sets to update UI
-        displayGearSets();
-    });
-
-    header.appendChild(setFavBtn);
     card.appendChild(header);
     
     // Parts Grid (2x2)
@@ -749,50 +607,32 @@ function createGearSetCard(setData) {
                 partDiv.classList.add('missing');
             }
             
-            // Bild mit Placeholder-Fallback
-            // Füge partType zum piece-Objekt hinzu für getItemIcon
-            piece.partType = partType;
-            const iconUrl = getItemIcon(piece, 'medium');
-
-            if (iconUrl) {
-                const img = document.createElement('img');
-                img.src = iconUrl;
-                img.alt = partType;
-                img.onerror = function() {
-                    // Wenn Bild nicht geladen werden kann, zeige generischen Placeholder
-                    this.style.display = 'none';
-
-                    const placeholderDiv = document.createElement('div');
-                    placeholderDiv.style.height = '100px';
-                    placeholderDiv.style.display = 'flex';
-                    placeholderDiv.style.alignItems = 'center';
-                    placeholderDiv.style.justifyContent = 'center';
-                    placeholderDiv.style.fontSize = '32px';
-                    placeholderDiv.style.color = '#666';
-                    placeholderDiv.textContent = '🎮';
-                    partDiv.appendChild(placeholderDiv);
-                };
-                partDiv.appendChild(img);
-            } else {
-                // Kein Bild und kein Placeholder verfügbar
-                // Zeige einen generischen Placeholder
-                const placeholderDiv = document.createElement('div');
-                placeholderDiv.style.height = '100px';
-                placeholderDiv.style.display = 'flex';
-                placeholderDiv.style.alignItems = 'center';
-                placeholderDiv.style.justifyContent = 'center';
-                placeholderDiv.style.fontSize = '32px';
-                placeholderDiv.style.color = '#666';
-                placeholderDiv.textContent = '🎮';
-                partDiv.appendChild(placeholderDiv);
-            }
+            // Bild - immer anzeigen (mit Placeholder falls nötig)
+            const img = document.createElement('img');
+            // Erstelle ein temporäres Item-Objekt für getItemIcon
+            const tempItem = {
+                image_url: piece.image_url,
+                icon_url: piece.image_url,
+                item_type: piece.item_type || partType,
+                type: piece.item_type || partType
+            };
+            img.src = getItemIcon(tempItem, 'medium');
+            img.alt = partType;
+            img.onerror = function() {
+                // Fallback zu Placeholder wenn Bild nicht lädt
+                const placeholderUrl = getItemIcon({item_type: piece.item_type || partType}, 'medium');
+                if (this.src !== placeholderUrl) {
+                    this.src = placeholderUrl;
+                }
+            };
+            partDiv.appendChild(img);
             
             // Name
             const partName = document.createElement('div');
             partName.className = 'part-name';
             partName.textContent = partType.toUpperCase();
             partDiv.appendChild(partName);
-
+            
             // KLICKBAR MACHEN!
             if (piece.name) {
                 partDiv.style.cursor = 'pointer';
@@ -869,18 +709,11 @@ function setupEventListeners() {
     
     // NEU: Tab-Taste für Autocomplete
     searchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            // ESC löscht den Suchtext
-            e.preventDefault();
-            searchInput.value = '';
-            hideAutocomplete();
-            hideSearchResults();
-            hideItemPreview();
-        } else if (e.key === 'Tab') {
+        if (e.key === 'Tab') {
             const autocompleteDiv = document.getElementById('autocomplete-dropdown');
             if (autocompleteDiv && !autocompleteDiv.classList.contains('hidden')) {
                 e.preventDefault(); // Verhindert Standard Tab-Verhalten
-
+                
                 // Wähle ersten Eintrag aus
                 const firstItem = autocompleteDiv.querySelector('.autocomplete-item');
                 if (firstItem && selectedAutocompleteIndex === -1) {
@@ -888,7 +721,7 @@ function setupEventListeners() {
                     selectedAutocompleteIndex = 0;
                     highlightAutocompleteItem(selectedAutocompleteIndex);
                 }
-
+                
                 // Übernehme den ausgewählten Eintrag
                 if (selectedAutocompleteIndex >= 0) {
                     const items = autocompleteDiv.querySelectorAll('.autocomplete-item');
@@ -956,11 +789,9 @@ function setupEventListeners() {
             currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
             // Update button text
             if (currentSortOrder === 'asc') {
-                const text = t('sortAscending') || '⬇️ Aufsteigend';
-                this.textContent = '⬇️ ' + (typeof text === 'string' ? text.replace('⬇️ ', '') : 'Aufsteigend');
+                this.textContent = '⬇️ ' + t('sortAscending').replace('⬇️ ', '');
             } else {
-                const text = t('sortDescending') || '⬆️ Absteigend';
-                this.textContent = '⬆️ ' + (typeof text === 'string' ? text.replace('⬆️ ', '') : 'Absteigend');
+                this.textContent = '⬆️ ' + t('sortDescending').replace('⬆️ ', '');
             }
             // ÄNDERUNG 3: Sortierreihenfolge speichern
             saveSortAndFilterSettings();
@@ -982,78 +813,7 @@ function setupEventListeners() {
     const searchLimitSelect = document.getElementById('search-limit');
     searchLimitSelect.addEventListener('change', function(e) {
         saveSearchLimit(parseInt(e.target.value));
-        // Trigger search again without clearing the input
-        const searchInput = document.getElementById('search-input');
-        if (searchInput && searchInput.value) {
-            handleSearch(searchInput.value);
-        }
     });
-
-    // Cache clear button (reloads page to clear browser cache)
-    const clearCacheBtn = document.getElementById('clear-cache-btn');
-    if (clearCacheBtn) {
-        clearCacheBtn.addEventListener('click', function() {
-            if (!confirm('Seite neu laden und Browser-Cache leeren?')) {
-                return;
-            }
-            // Hard reload - clears browser cache
-            location.reload(true);
-        });
-    }
-
-    // Debug button (opens DevTools)
-    const debugBtn = document.getElementById('debug-btn');
-    if (debugBtn) {
-        debugBtn.addEventListener('click', async function() {
-            try {
-                const result = await apiCall('open_devtools', {});
-                if (!result.success) {
-                    alert('DevTools konnten nicht geöffnet werden. Nur im Desktop-Modus verfügbar.');
-                }
-            } catch (error) {
-                console.log('Debug button clicked - DevTools not available in browser mode');
-            }
-        });
-    }
-
-    // Clear inventory button (with multiple confirmations)
-    const clearInventoryBtn = document.getElementById('clear-inventory-btn');
-    if (clearInventoryBtn) {
-        clearInventoryBtn.addEventListener('click', async function() {
-            // First confirmation
-            if (!confirm('⚠️ WARNUNG: Dies setzt ALLE Item-Counts im Inventar auf 0!\n\nDie Items bleiben in der Datenbank, aber dein Inventar wird komplett geleert.\n\nMöchtest du wirklich fortfahren?')) {
-                return;
-            }
-
-            // Second confirmation
-            if (!confirm('⚠️ LETZTE WARNUNG!\n\nDies kann NICHT rückgängig gemacht werden!\n\nAlle deine Inventar-Counts werden auf 0 gesetzt.\n\nBist du dir ABSOLUT SICHER?')) {
-                return;
-            }
-
-            // Third confirmation - user must type "YES"
-            const confirmation = prompt('⚠️ FINALE BESTÄTIGUNG\n\nUm fortzufahren, tippe genau "YES" (Großbuchstaben) ein:');
-
-            if (confirmation !== 'YES') {
-                alert('Abgebrochen. Das Inventar wurde NICHT geleert.');
-                return;
-            }
-
-            // All confirmations passed - clear inventory
-            try {
-                const result = await apiCall('clear_inventory', {});
-                if (result.success) {
-                    alert('✅ Inventar wurde geleert!\n\nAlle Item-Counts wurden auf 0 gesetzt.');
-                    // Reload inventory to show empty state
-                    loadInventory();
-                    loadStats();
-                } else {
-                    alert('❌ Fehler beim Leeren des Inventars:\n' + (result.error || 'Unbekannter Fehler'));
-                }
-            } catch (error) {
-                alert('❌ Fehler: ' + error.message);
-            }
-        });
-    }
 }
 
 function setupModalCloseEvents() {
@@ -1170,7 +930,7 @@ async function loadCategories() {
         console.error('Error loading categories:', error);
         const buttonGrid = document.getElementById('category-buttons');
         if (buttonGrid) {
-            buttonGrid.innerHTML = `<div style="color: #f44; padding: 10px;">${safeT('categoryLoadError')}</div>`;
+            buttonGrid.innerHTML = `<div style="color: #f44; padding: 10px;">${t('categoryLoadError')}</div>`;
         }
     }
 }
@@ -1367,7 +1127,7 @@ async function handleSearch(query) {
     } catch (error) {
         console.error('Search error:', error);
         const resultsDiv = document.getElementById('search-results');
-        resultsDiv.innerHTML = `<div style="padding: 10px; color: #f44;">${safeT('searchError')}</div>`;
+        resultsDiv.innerHTML = `<div style="padding: 10px; color: #f44;">${t('searchError')}</div>`;
         resultsDiv.classList.remove('hidden');
     }
 }
@@ -1526,7 +1286,16 @@ function displaySearchResults(localResults, totalCount) {
     } else {
         // FIXED: Fallback für t() Funktion
         let noResultsText = 'Keine Ergebnisse gefunden';
-        noResultsText = safeT('searchNoResults');
+        if (typeof t === 'function') {
+            try {
+                const translated = t('searchNoResults');
+                if (typeof translated === 'string') {
+                    noResultsText = translated;
+                }
+            } catch (e) {
+                console.warn('Translation error:', e);
+            }
+        }
         
         resultsDiv.innerHTML = `<div style="padding: 10px; color: #888;">${noResultsText}</div>`;
         resultsDiv.classList.remove('hidden');
@@ -1539,40 +1308,8 @@ function createSearchResultItem(item) {
     div.style.display = 'flex';
     div.style.alignItems = 'center';
     div.style.gap = '5px';
-
-    // Use THUMB for search results (klein, schnell) - JETZT ZUERST!
-    const iconUrl = getItemIcon(item, 'thumb');
-    if (iconUrl) {
-        const img = document.createElement('img');
-        img.src = iconUrl;
-        img.className = 'search-item-thumbnail';
-        img.alt = item.name;
-        img.style.width = '32px';
-        img.style.height = '32px';
-        img.style.objectFit = 'contain';
-        img.style.marginLeft = '8px';
-        img.style.marginRight = '8px';
-        img.loading = 'lazy';
-        img.onerror = function() {
-            // Fallback zum Gamecontroller wenn Bild fehlt
-            const icon = document.createElement('span');
-            icon.style.fontSize = '24px';
-            icon.style.marginLeft = '8px';
-            icon.style.marginRight = '8px';
-            icon.textContent = '🎮';
-            this.replaceWith(icon);
-        };
-        div.appendChild(img);
-    } else {
-        const icon = document.createElement('span');
-        icon.style.fontSize = '24px';
-        icon.style.marginLeft = '8px';
-        icon.style.marginRight = '8px';
-        icon.textContent = '🎮';
-        div.appendChild(icon);
-    }
-
-    // Minus button
+    
+    // Minus button (JETZT LINKS)
     const minusBtn = document.createElement('button');
     minusBtn.textContent = '−';
     minusBtn.className = 'search-quick-btn search-btn-minus';
@@ -1585,27 +1322,68 @@ function createSearchResultItem(item) {
             // Finde die Zahl-Anzeige DIREKT (im gleichen div)
             const parentDiv = e.target.closest('.search-result-item');
             const countSpan = parentDiv.querySelector('.search-item-count');
-
+            
             await quickUpdateCount(item, -1, countSpan, minusBtn);
         }
     });
     div.appendChild(minusBtn);
-
-    // Plus button
+    
+    // Plus button (JETZT LINKS)
     const plusBtn = document.createElement('button');
     plusBtn.textContent = '+';
     plusBtn.className = 'search-quick-btn search-btn-plus';
     plusBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-
+        
         // Finde die Zahl-Anzeige DIREKT (im gleichen div)
         const parentDiv = e.target.closest('.search-result-item');
         const countSpan = parentDiv.querySelector('.search-item-count');
         const minusBtnInDiv = parentDiv.querySelector('.search-btn-minus');
-
+        
         await quickUpdateCount(item, 1, countSpan, minusBtnInDiv);
     });
     div.appendChild(plusBtn);
+    
+    // Use THUMB for search results (klein, schnell)
+    if (item.icon_url) {
+        const img = document.createElement('img');
+        // Konvertiere zu thumb: .png → _thumb.png
+        let thumbUrl = item.icon_url;
+        if (thumbUrl.endsWith('.png')) {
+            thumbUrl = thumbUrl.replace(/\.png$/, '_thumb.png');
+        }
+        img.src = thumbUrl;
+        img.className = 'search-item-thumbnail';
+        img.alt = item.name;
+        img.style.width = '32px';
+        img.style.height = '32px';
+        img.style.objectFit = 'contain';
+        img.style.marginLeft = '8px';
+        img.style.marginRight = '8px';
+        img.loading = 'lazy';
+        img.onerror = function() {
+            // Replace with placeholder icon
+            const placeholderUrl = getItemIcon(item, 'thumb');
+            if (this.src !== placeholderUrl) {
+                this.src = placeholderUrl;
+            } else {
+                this.style.display = 'none';
+            }
+        };
+        div.appendChild(img);
+    } else {
+        // No image - use placeholder
+        const placeholderImg = document.createElement('img');
+        placeholderImg.src = getItemIcon(item, 'thumb');
+        placeholderImg.alt = item.name;
+        placeholderImg.style.width = '40px';
+        placeholderImg.style.height = '40px';
+        placeholderImg.style.marginLeft = '8px';
+        placeholderImg.style.marginRight = '8px';
+        placeholderImg.style.objectFit = 'contain';
+        placeholderImg.loading = 'lazy';
+        div.appendChild(placeholderImg);
+    }
     
     // Item name
     const nameSpan = document.createElement('span');
@@ -1843,7 +1621,7 @@ async function loadInventory() {
     } catch (error) {
         console.error('Error loading inventory:', error);
         const grid = document.getElementById('inventory-grid');
-        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #f44;">${safeT('inventoryLoadError')}</p>`;
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #f44;">${t('inventoryLoadError')}</p>`;
     }
 }
 
@@ -1852,9 +1630,9 @@ function displayInventory(items) {
     grid.innerHTML = '';
 
     if (!items || items.length === 0) {
-        const message = currentCategoryFilter
-            ? safeT('inventoryCategoryEmpty', {category: currentCategoryFilter})
-            : safeT('inventoryEmpty');
+        const message = currentCategoryFilter 
+            ? t('inventoryCategoryEmpty', {category: currentCategoryFilter})
+            : t('inventoryEmpty');
         grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #888;">${message}</p>`;
         return;
     }
@@ -1871,43 +1649,24 @@ function createInventoryItem(item) {
     div.dataset.name = item.name;
     div.style.position = 'relative';
     
-    // Use MEDIUM for inventory grid with intelligent fallback
-    const iconUrl = getItemIcon(item, 'medium');
-    if (iconUrl) {
-        const img = document.createElement('img');
-        img.src = iconUrl;
-        img.alt = item.name;
-        img.style.width = '100%';
-        img.style.height = '120px';
-        img.style.objectFit = 'contain';
-        img.style.background = '#222';
-        img.loading = 'lazy';
-        img.onerror = function() {
-            this.style.display = 'none';
-            const placeholder = document.createElement('div');
-            placeholder.style.height = '120px';
-            placeholder.style.background = '#333';
-            placeholder.style.display = 'flex';
-            placeholder.style.alignItems = 'center';
-            placeholder.style.justifyContent = 'center';
-            placeholder.style.fontSize = '48px';
-            placeholder.textContent = '🎮';
-            div.insertBefore(placeholder, div.firstChild);
-        };
-        div.appendChild(img);
-    } else {
-        const placeholder = document.createElement('div');
-        placeholder.className = 'item-placeholder';
-        placeholder.style.background = '#333';
-        placeholder.style.height = '120px';
-        placeholder.style.display = 'flex';
-        placeholder.style.alignItems = 'center';
-        placeholder.style.justifyContent = 'center';
-        placeholder.style.color = '#666';
-        placeholder.style.fontSize = '48px';
-        placeholder.textContent = '🎮';
-        div.appendChild(placeholder);
-    }
+    // Use MEDIUM for inventory grid
+    const img = document.createElement('img');
+    const imageUrl = getItemIcon(item, 'medium');
+    img.src = imageUrl;
+    img.alt = item.name;
+    img.style.width = '100%';
+    img.style.height = '120px';
+    img.style.objectFit = 'contain';
+    img.style.background = '#222';
+    img.loading = 'lazy';
+    img.onerror = function() {
+        // Try placeholder as fallback
+        const placeholderUrl = getItemIcon(item, 'medium');
+        if (this.src !== placeholderUrl) {
+            this.src = placeholderUrl;
+        }
+    };
+    div.appendChild(img);
     
     // NEU: Favorite Button (Oben Links)
     const favBtn = document.createElement('button');
@@ -2046,10 +1805,10 @@ async function showItemModal(item) {
     const modalImage = document.getElementById('modal-image');
     const countInput = document.getElementById('modal-count');
     const notesInput = document.getElementById('modal-notes');
-    
-    // Placeholder
-    modalImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="512" height="512"%3E%3Crect fill="%23333" width="512" height="512"/%3E%3Ctext x="50%25" y="50%25" font-size="64" text-anchor="middle" dy=".3em" fill="%23666"%3E🎮%3C/text%3E%3C/svg%3E';
-    
+
+    // Set placeholder image
+    modalImage.src = getItemIcon(item, 'full');
+
     countInput.value = item.count || 0;
     notesInput.value = '';
     
@@ -2315,92 +2074,114 @@ function setupStickyHeaderScrolling() {
 // ========================================
 // IMPORT FROM SC VIEW LOGIC
 // ========================================
-let currentScanMode = 1;
+
+let currentScanMode = 1; // 1 = 1x1, 2 = 1x2
 let importFoundItems = [];
 let importNotFoundItems = [];
 let undoStack = [];
 let redoStack = [];
 let currentImportCategoryFilter = '';
 
-// Pagination
-const ITEMS_PER_PAGE = 50;
-let currentFoundPage = 1;
-
+// Initialize Import view when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     setupImportView();
 });
 
 function setupImportView() {
+    // Mode selection
     const modeBtns = document.querySelectorAll('.mode-btn');
     modeBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             modeBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             currentScanMode = parseInt(this.getAttribute('data-mode'));
+            console.log(`Selected scan mode: ${currentScanMode}`);
         });
     });
 
-    document.getElementById('start-scan-btn')?.addEventListener('click', startScan);
-    document.getElementById('check-results-btn')?.addEventListener('click', loadScanResults);
-    document.getElementById('import-items-btn')?.addEventListener('click', importItems);
-    document.getElementById('new-scan-btn')?.addEventListener('click', resetToBeforeScan);
-    document.getElementById('undo-btn')?.addEventListener('click', undoRemove);
-    document.getElementById('redo-btn')?.addEventListener('click', redoRemove);
-    document.getElementById('open-notdetected-btn')?.addEventListener('click', async () => {
-        try {
-            const result = await apiCall('open_not_detected_file', {});
-            if (!result.success) {
-                alert('Fehler: ' + (result.error || 'Datei konnte nicht geöffnet werden'));
-            }
-        } catch (error) {
-            alert('Fehler beim Öffnen der Datei: ' + error.message);
-        }
-    });
+    // Start Scan button
+    const startScanBtn = document.getElementById('start-scan-btn');
+    if (startScanBtn) {
+        startScanBtn.addEventListener('click', startScan);
+    }
 
-    // Pagination controls
-    document.getElementById('found-prev-btn')?.addEventListener('click', () => {
-        if (currentFoundPage > 1) {
-            currentFoundPage--;
-            displayImportResults();
-        }
-    });
+    // Check Results button
+    const checkResultsBtn = document.getElementById('check-results-btn');
+    if (checkResultsBtn) {
+        checkResultsBtn.addEventListener('click', loadScanResults);
+    }
 
-    document.getElementById('found-next-btn')?.addEventListener('click', () => {
-        const filteredItems = currentImportCategoryFilter
-            ? importFoundItems.filter(item => item.item_type === currentImportCategoryFilter)
-            : importFoundItems;
-        const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+    // Import Items button
+    const importItemsBtn = document.getElementById('import-items-btn');
+    if (importItemsBtn) {
+        importItemsBtn.addEventListener('click', importItems);
+    }
 
-        if (currentFoundPage < totalPages) {
-            currentFoundPage++;
-            displayImportResults();
-        }
-    });
+    // New Scan button
+    const newScanBtn = document.getElementById('new-scan-btn');
+    if (newScanBtn) {
+        newScanBtn.addEventListener('click', resetToBeforeScan);
+    }
+
+    // Undo/Redo buttons
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
+
+    if (undoBtn) {
+        undoBtn.addEventListener('click', undoRemove);
+    }
+
+    if (redoBtn) {
+        redoBtn.addEventListener('click', redoRemove);
+    }
+
+    // Open not_detected.md button
+    const openNotDetectedBtn = document.getElementById('open-notdetected-btn');
+    if (openNotDetectedBtn) {
+        openNotDetectedBtn.addEventListener('click', openNotDetectedFile);
+    }
+
+    console.log('✅ Import view initialized');
 }
 
 async function startScan() {
+    console.log(`Starting scan with mode ${currentScanMode}...`);
+
     try {
-        const modeResult = await apiCall('set_scan_mode', { mode: currentScanMode });
+        // Set scan mode in backend
+        const modeResult = await apiRequest('set_scan_mode', { mode: currentScanMode });
+
         if (!modeResult.success) {
             alert('Fehler beim Setzen des Scan-Modus: ' + modeResult.error);
             return;
         }
 
-        const scanResult = await apiCall('start_scanner', {});
+        console.log('✅ Scan mode set to:', currentScanMode);
+
+        // Start scanner
+        const scanResult = await apiRequest('start_scanner', {});
+
         if (!scanResult.success) {
             alert('Fehler beim Starten des Scanners: ' + scanResult.error);
             return;
         }
 
+        console.log('✅ Scanner started');
+
+        // Switch to "during scan" state
         document.getElementById('import-before-scan').classList.add('hidden');
         document.getElementById('import-during-scan').classList.remove('hidden');
         document.getElementById('import-after-scan').classList.add('hidden');
+
     } catch (error) {
+        console.error('Error starting scan:', error);
         alert('Fehler beim Starten des Scans: ' + error.message);
     }
 }
 
 async function loadScanResults() {
+    console.log('Loading scan results...');
+
     try {
         const response = await fetch('/api/get_scan_results');
         const data = await response.json();
@@ -2412,49 +2193,63 @@ async function loadScanResults() {
 
         importFoundItems = data.found || [];
         importNotFoundItems = data.not_found || [];
+
+        console.log(`Loaded ${importFoundItems.length} found items, ${importNotFoundItems.length} not found`);
+
+        // Reset undo/redo stacks
         undoStack = [];
         redoStack = [];
         updateUndoRedoButtons();
 
+        // Switch to "after scan" state
         document.getElementById('import-before-scan').classList.add('hidden');
         document.getElementById('import-during-scan').classList.add('hidden');
         document.getElementById('import-after-scan').classList.remove('hidden');
 
+        // Load categories for filtering
         loadImportCategories();
+
+        // Display results
         displayImportResults();
+
     } catch (error) {
+        console.error('Error loading scan results:', error);
         alert('Fehler beim Laden der Ergebnisse: ' + error.message);
     }
 }
 
 function loadImportCategories() {
+    // Extract unique categories from found items
     const categories = new Set();
     importFoundItems.forEach(item => {
-        if (item.item_type) categories.add(item.item_type);
+        if (item.item_type) {
+            categories.add(item.item_type);
+        }
     });
 
+    // Create category buttons
     const categoryButtons = document.getElementById('import-category-buttons');
     categoryButtons.innerHTML = '';
 
+    // "Alle" button
     const allBtn = document.createElement('button');
     allBtn.className = 'category-btn active';
     allBtn.textContent = '🌐 Alle';
     allBtn.addEventListener('click', () => {
         currentImportCategoryFilter = '';
-        currentFoundPage = 1; // Reset to first page
         document.querySelectorAll('#import-category-buttons .category-btn').forEach(b => b.classList.remove('active'));
         allBtn.classList.add('active');
         displayImportResults();
     });
     categoryButtons.appendChild(allBtn);
 
+    // Individual category buttons
     Array.from(categories).sort().forEach(category => {
         const btn = document.createElement('button');
         btn.className = 'category-btn';
         btn.textContent = category;
         btn.addEventListener('click', () => {
             currentImportCategoryFilter = category;
-            currentFoundPage = 1; // Reset to first page
             document.querySelectorAll('#import-category-buttons .category-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             displayImportResults();
@@ -2464,76 +2259,38 @@ function loadImportCategories() {
 }
 
 function displayImportResults() {
+    // Filter items by category
     const filteredItems = currentImportCategoryFilter
         ? importFoundItems.filter(item => item.item_type === currentImportCategoryFilter)
         : importFoundItems;
 
-    // Calculate unique items count and total items count
-    const uniqueCount = filteredItems.length;
-    const totalCount = filteredItems.reduce((sum, item) => sum + (item.count || 0), 0);
-
-    document.getElementById('found-unique-count').textContent = uniqueCount;
-    document.getElementById('found-total-count').textContent = totalCount;
+    // Update count
+    document.getElementById('found-count').textContent = filteredItems.length;
     document.getElementById('notfound-count').textContent = importNotFoundItems.length;
 
-    // Pagination logic
-    const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
-    const paginationControls = document.getElementById('found-pagination');
-    const prevBtn = document.getElementById('found-prev-btn');
-    const nextBtn = document.getElementById('found-next-btn');
-
-    // Reset to page 1 if current page exceeds total pages
-    if (currentFoundPage > totalPages && totalPages > 0) {
-        currentFoundPage = 1;
-    }
-
-    // Show/hide pagination controls
-    if (filteredItems.length > ITEMS_PER_PAGE) {
-        paginationControls.style.display = 'flex';
-        document.getElementById('found-current-page').textContent = currentFoundPage;
-        document.getElementById('found-total-pages').textContent = totalPages;
-
-        prevBtn.disabled = currentFoundPage === 1;
-        nextBtn.disabled = currentFoundPage === totalPages;
-    } else {
-        paginationControls.style.display = 'none';
-        currentFoundPage = 1;
-    }
-
-    // Calculate items to display on current page
-    const startIndex = (currentFoundPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    const itemsToDisplay = filteredItems.slice(startIndex, endIndex);
-
+    // Display found items grid
     const grid = document.getElementById('import-found-grid');
     grid.innerHTML = '';
 
     if (filteredItems.length === 0) {
         grid.innerHTML = '<p style="color: #888; text-align: center; grid-column: 1 / -1;">Keine Items gefunden.</p>';
     } else {
-        itemsToDisplay.forEach(item => {
+        filteredItems.forEach((item, index) => {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'import-item';
-
-            // Get placeholder based on item_type
-            const placeholderPath = item.item_type
-                ? `/images/Placeholder/${item.item_type}.png`
-                : '/images/Placeholder/Helmet.png'; // Default fallback
-
-            // Add cache-busting timestamp
-            const cacheBuster = `?v=${Date.now()}`;
-            const imageUrl = item.image_url ? `${item.image_url}${cacheBuster}` : placeholderPath;
-            const fallbackUrl = `${placeholderPath}${cacheBuster}`;
+            itemDiv.setAttribute('data-item-index', importFoundItems.indexOf(item));
 
             itemDiv.innerHTML = `
                 <button class="import-item-remove" title="Item entfernen">❌</button>
-                <img src="${imageUrl}" alt="${item.name}" onerror="this.src='${fallbackUrl}'">
+                <img src="${item.image_url || '/img/placeholder.png'}" alt="${item.name}" onerror="this.src='/img/placeholder.png'">
                 <div class="import-item-name">${item.name}</div>
                 <div class="import-item-count">Anzahl: ${item.count}</div>
                 ${item.scanned_name !== item.name ? `<div style="font-size: 0.75em; color: #888;">OCR: ${item.scanned_name}</div>` : ''}
             `;
 
-            itemDiv.querySelector('.import-item-remove').addEventListener('click', (e) => {
+            // Remove button handler
+            const removeBtn = itemDiv.querySelector('.import-item-remove');
+            removeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 removeItem(importFoundItems.indexOf(item));
             });
@@ -2542,6 +2299,7 @@ function displayImportResults() {
         });
     }
 
+    // Display not found items
     const notFoundList = document.getElementById('import-notfound-list');
     notFoundList.innerHTML = '';
 
@@ -2559,38 +2317,70 @@ function displayImportResults() {
 
 function removeItem(index) {
     const item = importFoundItems[index];
+
+    // Add to undo stack
     undoStack.push({ action: 'remove', item: item, index: index });
-    redoStack = [];
+    redoStack = []; // Clear redo stack
+
+    // Remove from array
     importFoundItems.splice(index, 1);
+
+    // Update display
     displayImportResults();
     updateUndoRedoButtons();
+
+    console.log(`Removed item: ${item.name}`);
 }
 
 function undoRemove() {
     if (undoStack.length === 0) return;
+
     const action = undoStack.pop();
+
     if (action.action === 'remove') {
+        // Re-insert item at original position
         importFoundItems.splice(action.index, 0, action.item);
+
+        // Add to redo stack
         redoStack.push(action);
     }
+
     displayImportResults();
     updateUndoRedoButtons();
+
+    console.log(`Undo: Re-added ${action.item.name}`);
 }
 
 function redoRemove() {
     if (redoStack.length === 0) return;
+
     const action = redoStack.pop();
+
     if (action.action === 'remove') {
+        // Remove item again
         importFoundItems.splice(action.index, 1);
+
+        // Add back to undo stack
         undoStack.push(action);
     }
+
     displayImportResults();
     updateUndoRedoButtons();
+
+    console.log(`Redo: Removed ${action.item.name}`);
 }
 
 function updateUndoRedoButtons() {
-    document.getElementById('undo-btn').disabled = undoStack.length === 0;
-    document.getElementById('redo-btn').disabled = redoStack.length === 0;
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
+
+    if (undoBtn) {
+        undoBtn.disabled = undoStack.length === 0;
+    }
+
+    if (redoBtn) {
+        redoBtn.disabled = redoStack.length === 0;
+    }
 }
 
 async function importItems() {
@@ -2599,9 +2389,12 @@ async function importItems() {
         return;
     }
 
-    if (!confirm(`${importFoundItems.length} Items in das Inventar importieren?`)) {
+    const confirmMsg = `${importFoundItems.length} Items in das Inventar importieren?`;
+    if (!confirm(confirmMsg)) {
         return;
     }
+
+    console.log(`Importing ${importFoundItems.length} items...`);
 
     try {
         const itemsToImport = importFoundItems.map(item => ({
@@ -2609,33 +2402,56 @@ async function importItems() {
             count: item.count
         }));
 
-        const result = await apiCall('import_scanned_items', { items: itemsToImport });
+        const result = await apiRequest('import_scanned_items', { items: itemsToImport });
 
         if (!result.success) {
             alert('Fehler beim Importieren: ' + result.error);
             return;
         }
 
+        console.log('✅ Import successful:', result.results);
+
+        // Show success message
         const successCount = result.results.filter(r => r.success).length;
         alert(`${successCount} von ${importFoundItems.length} Items erfolgreich importiert!`);
 
+        // Reload inventory and stats
         loadInventory();
         loadStats();
+
+        // Switch back to inventory view
         switchToView('inventory');
+
+        // Reset import view
         resetToBeforeScan();
+
     } catch (error) {
+        console.error('Error importing items:', error);
         alert('Fehler beim Importieren: ' + error.message);
     }
 }
 
 function resetToBeforeScan() {
+    // Clear data
     importFoundItems = [];
     importNotFoundItems = [];
     undoStack = [];
     redoStack = [];
     currentImportCategoryFilter = '';
 
+    // Reset to before scan state
     document.getElementById('import-before-scan').classList.remove('hidden');
     document.getElementById('import-during-scan').classList.add('hidden');
     document.getElementById('import-after-scan').classList.add('hidden');
+
+    console.log('✅ Import view reset');
+}
+
+function openNotDetectedFile() {
+    // This would ideally open the file in the user's default text editor
+    // For now, we'll just show an alert with the path
+    alert('Die Datei not_detected.md befindet sich im InvDetect Ordner.\n\nPfad: GearCrate/InvDetect/not_detected.md');
+
+    // Alternative: Try to open via backend API
+    // This would require a new backend method to open files
 }
