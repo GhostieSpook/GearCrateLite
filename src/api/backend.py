@@ -181,11 +181,17 @@ class API:
         return item
         
     def get_categories(self):
-        """Retrieve all distinct item types for filters"""
-        stats = self.get_category_stats()
-        # 'Favorites' aus der Liste der normalen Kategorien filtern
-        types = [t for t in stats.get('category_counts', {}).keys() if t != 'Favorites']
-        return sorted(types)
+        """Retrieve all distinct item types for filters (from all items in DB, not just inventory)"""
+        # Get all unique categories from database (including items with count=0)
+        all_items = self.operations.get_all_items(include_zero_count=True)
+        categories = set()
+
+        for item in all_items:
+            item_type = item.get('item_type')
+            if item_type and item_type != 'Favorites':
+                categories.add(item_type)
+
+        return sorted(list(categories))
 
     def get_category_stats(self):
         """Get inventory stats by item category"""
@@ -563,47 +569,59 @@ class API:
         Imports scanned items into inventory
         items: [{name, count}, ...]
         For existing items: adds to count
-        For new items: creates with scanned count
+        For new items: should not create (items must exist in DB first)
         """
         import_results = []
+
+        print(f"\n🔄 Importing {len(items)} scanned items...")
 
         for item_data in items:
             item_name = item_data.get('name')
             scanned_count = item_data.get('count', 1)
 
             try:
-                # Check if item exists
-                existing = self.operations.get_item(item_name)
+                # Check if item exists in database
+                existing = self.operations.get_item_by_name(item_name)
+
+                print(f"📦 '{item_name}': scanned={scanned_count}, existing={existing is not None}")
 
                 if existing:
                     # Item exists → add to count
-                    new_count = existing.get('count', 0) + scanned_count
+                    current_count = existing.get('count', 0)
+                    new_count = current_count + scanned_count
+
                     result = self.operations.update_item_count(item_name, new_count)
+
+                    print(f"   ✅ Updated: {current_count} + {scanned_count} = {new_count}, success={result.get('success')}")
+
                     import_results.append({
                         'name': item_name,
                         'action': 'updated',
-                        'old_count': existing.get('count', 0),
+                        'old_count': current_count,
                         'new_count': new_count,
                         'success': result.get('success', False)
                     })
                 else:
-                    # Item doesn't exist → should not happen (items come from DB)
-                    # But just in case, we create it
-                    result = self.operations.update_item_count(item_name, scanned_count)
+                    # Item doesn't exist in database → skip (should not happen)
+                    print(f"   ⚠️  Item not found in database, skipping")
                     import_results.append({
                         'name': item_name,
-                        'action': 'created',
-                        'count': scanned_count,
-                        'success': result.get('success', False)
+                        'action': 'skipped',
+                        'error': 'Item not in database',
+                        'success': False
                     })
 
             except Exception as e:
+                print(f"   ❌ Error: {e}")
                 import_results.append({
                     'name': item_name,
                     'action': 'error',
                     'error': str(e),
                     'success': False
                 })
+
+        successful = sum(1 for r in import_results if r.get('success'))
+        print(f"✅ Import complete: {successful}/{len(items)} successful\n")
 
         return {
             'success': True,

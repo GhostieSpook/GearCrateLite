@@ -207,18 +207,25 @@ function getPlaceholderIcon(itemType) {
 function getItemIcon(item, size = 'medium') {
     // size kann sein: 'thumb', 'medium', oder 'full'
 
-    // 1. Prüfe ob lokales gecachtes Bild vorhanden (icon_url zeigt auf /images/)
-    if (item.icon_url && item.icon_url.startsWith('/images/')) {
-        let imageUrl = item.icon_url;
+    // 1. Prüfe ob lokales gecachtes Bild vorhanden
+    // Prüfe sowohl icon_url als auch image_url (für Gear-Sets)
+    let localImageUrl = null;
 
+    if (item.icon_url && item.icon_url.startsWith('/images/')) {
+        localImageUrl = item.icon_url;
+    } else if (item.image_url && item.image_url.startsWith('/images/')) {
+        localImageUrl = item.image_url;
+    }
+
+    if (localImageUrl) {
         // Konvertiere zu gewünschter Größe
-        if (size === 'thumb' && imageUrl.endsWith('.png')) {
-            return imageUrl.replace(/\.png$/, '_thumb.png');
-        } else if (size === 'medium' && imageUrl.endsWith('.png')) {
-            return imageUrl.replace(/\.png$/, '_medium.png');
+        if (size === 'thumb' && localImageUrl.endsWith('.png')) {
+            return localImageUrl.replace(/\.png$/, '_thumb.png');
+        } else if (size === 'medium' && localImageUrl.endsWith('.png')) {
+            return localImageUrl.replace(/\.png$/, '_medium.png');
         }
 
-        return imageUrl;
+        return localImageUrl;
     }
 
     // 2. Kein lokales Bild → Versuche Placeholder
@@ -231,7 +238,40 @@ function getItemIcon(item, size = 'medium') {
         itemType = 'Torso';
     }
 
+    // Map common part types to proper capitalized names
+    const partTypeMapping = {
+        'helmet': 'Helmet',
+        'core': 'Torso',
+        'torso': 'Torso',
+        'arms': 'Arms',
+        'legs': 'Legs',
+        'backpack': 'Backpack',
+        'undersuit': 'Undersuit',
+        'hat': 'Hat',
+        'eyes': 'Eyes',
+        'hands': 'Hands',
+        'jacket': 'Jacket',
+        'jumpsuit': 'Jumpsuit',
+        'pants': 'Pants',
+        'shirt': 'Shirt',
+        'shoes': 'Shoes'
+    };
+
+    // Try to map itemType to proper capitalized name
+    if (itemType) {
+        const mappedType = partTypeMapping[itemType.toLowerCase()];
+        if (mappedType) {
+            itemType = mappedType;
+        }
+    }
+
     const placeholderPath = getPlaceholderIcon(itemType);
+
+    // DEBUG: Log placeholder resolution
+    if (item.partType && !placeholderPath) {
+        console.log(`⚠️  No placeholder found for: partType=${item.partType}, itemType=${itemType}`);
+    }
+
     if (placeholderPath) {
         return placeholderPath;
     }
@@ -713,13 +753,24 @@ function createGearSetCard(setData) {
             // Füge partType zum piece-Objekt hinzu für getItemIcon
             piece.partType = partType;
             const iconUrl = getItemIcon(piece, 'medium');
+
             if (iconUrl) {
                 const img = document.createElement('img');
                 img.src = iconUrl;
                 img.alt = partType;
                 img.onerror = function() {
-                    // Wenn Bild fehlt, zeige nichts (Placeholder wurde bereits versucht)
+                    // Wenn Bild nicht geladen werden kann, zeige generischen Placeholder
                     this.style.display = 'none';
+
+                    const placeholderDiv = document.createElement('div');
+                    placeholderDiv.style.height = '100px';
+                    placeholderDiv.style.display = 'flex';
+                    placeholderDiv.style.alignItems = 'center';
+                    placeholderDiv.style.justifyContent = 'center';
+                    placeholderDiv.style.fontSize = '32px';
+                    placeholderDiv.style.color = '#666';
+                    placeholderDiv.textContent = '🎮';
+                    partDiv.appendChild(placeholderDiv);
                 };
                 partDiv.appendChild(img);
             } else {
@@ -2271,6 +2322,10 @@ let undoStack = [];
 let redoStack = [];
 let currentImportCategoryFilter = '';
 
+// Pagination
+const ITEMS_PER_PAGE = 50;
+let currentFoundPage = 1;
+
 document.addEventListener('DOMContentLoaded', function() {
     setupImportView();
 });
@@ -2299,6 +2354,26 @@ function setupImportView() {
             }
         } catch (error) {
             alert('Fehler beim Öffnen der Datei: ' + error.message);
+        }
+    });
+
+    // Pagination controls
+    document.getElementById('found-prev-btn')?.addEventListener('click', () => {
+        if (currentFoundPage > 1) {
+            currentFoundPage--;
+            displayImportResults();
+        }
+    });
+
+    document.getElementById('found-next-btn')?.addEventListener('click', () => {
+        const filteredItems = currentImportCategoryFilter
+            ? importFoundItems.filter(item => item.item_type === currentImportCategoryFilter)
+            : importFoundItems;
+        const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+
+        if (currentFoundPage < totalPages) {
+            currentFoundPage++;
+            displayImportResults();
         }
     });
 }
@@ -2366,6 +2441,7 @@ function loadImportCategories() {
     allBtn.textContent = '🌐 Alle';
     allBtn.addEventListener('click', () => {
         currentImportCategoryFilter = '';
+        currentFoundPage = 1; // Reset to first page
         document.querySelectorAll('#import-category-buttons .category-btn').forEach(b => b.classList.remove('active'));
         allBtn.classList.add('active');
         displayImportResults();
@@ -2378,6 +2454,7 @@ function loadImportCategories() {
         btn.textContent = category;
         btn.addEventListener('click', () => {
             currentImportCategoryFilter = category;
+            currentFoundPage = 1; // Reset to first page
             document.querySelectorAll('#import-category-buttons .category-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             displayImportResults();
@@ -2399,13 +2476,42 @@ function displayImportResults() {
     document.getElementById('found-total-count').textContent = totalCount;
     document.getElementById('notfound-count').textContent = importNotFoundItems.length;
 
+    // Pagination logic
+    const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+    const paginationControls = document.getElementById('found-pagination');
+    const prevBtn = document.getElementById('found-prev-btn');
+    const nextBtn = document.getElementById('found-next-btn');
+
+    // Reset to page 1 if current page exceeds total pages
+    if (currentFoundPage > totalPages && totalPages > 0) {
+        currentFoundPage = 1;
+    }
+
+    // Show/hide pagination controls
+    if (filteredItems.length > ITEMS_PER_PAGE) {
+        paginationControls.style.display = 'flex';
+        document.getElementById('found-current-page').textContent = currentFoundPage;
+        document.getElementById('found-total-pages').textContent = totalPages;
+
+        prevBtn.disabled = currentFoundPage === 1;
+        nextBtn.disabled = currentFoundPage === totalPages;
+    } else {
+        paginationControls.style.display = 'none';
+        currentFoundPage = 1;
+    }
+
+    // Calculate items to display on current page
+    const startIndex = (currentFoundPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const itemsToDisplay = filteredItems.slice(startIndex, endIndex);
+
     const grid = document.getElementById('import-found-grid');
     grid.innerHTML = '';
 
     if (filteredItems.length === 0) {
         grid.innerHTML = '<p style="color: #888; text-align: center; grid-column: 1 / -1;">Keine Items gefunden.</p>';
     } else {
-        filteredItems.forEach(item => {
+        itemsToDisplay.forEach(item => {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'import-item';
 

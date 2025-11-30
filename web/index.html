@@ -238,6 +238,16 @@
                         <!-- Found Items -->
                         <div class="import-results-section">
                             <h3>✅ <span data-i18n="importFound">Gefundene Items</span> (<span id="found-unique-count">0</span> <span data-i18n="importUniqueItems">Unique</span>, <span id="found-total-count">0</span> <span data-i18n="importTotalItems">Gesamt</span>)</h3>
+
+                            <!-- Pagination Controls -->
+                            <div class="pagination-controls" id="found-pagination" style="display: none;">
+                                <button id="found-prev-btn" class="pagination-btn">← Zurück</button>
+                                <span class="pagination-info">
+                                    Seite <span id="found-current-page">1</span> von <span id="found-total-pages">1</span>
+                                </span>
+                                <button id="found-next-btn" class="pagination-btn">Weiter →</button>
+                            </div>
+
                             <div id="import-found-grid" class="import-grid">
                                 <!-- Dynamic grid items -->
                             </div>

@@ -1605,6 +1605,45 @@ textarea {
     margin-bottom: 15px;
 }
 
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin: 15px 0;
+    padding: 10px;
+    background: rgba(0, 217, 255, 0.1);
+    border-radius: 6px;
+}
+
+.pagination-btn {
+    background: rgba(0, 217, 255, 0.2);
+    border: 1px solid #00d9ff;
+    color: #00d9ff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: rgba(0, 217, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    color: #00d9ff;
+    font-size: 14px;
+    font-weight: 500;
+}
+
 /* Import Grid (similar to inventory grid) */
 .import-grid {
     display: grid;
