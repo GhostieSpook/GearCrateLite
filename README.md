@@ -33,9 +33,12 @@ For a complete installation of all dependencies and an automatic initial launch,
 
 To start the program for routine use after the initial setup:
 
-1.  Double-click to run **`start-browser.bat`**.
+1.  Double-click to run **`start-desktop-admin.bat`**.
 
-> **Note:** This script initiates the local Python backend server and automatically opens the application window (GUI) once the server is ready.
+> **Note:** This script initiates the local Python backend server and automatically opens the application window asking for admin permissions (GUI) once the server is ready.
+Why does this programm need administrative permissions?
+- Reason: Elevated privileges are often necessary for the keyboard and pyautogui libraries to reliably capture hotkeys and control the mouse while interacting with a full-screen or high-privilege application (like the game itself).
+- Risk Warning: Any program run with Administrator rights has full access to your operating system. Users must verify the integrity of the source code before running the script.
 
 ---
 
@@ -44,3 +47,15 @@ To start the program for routine use after the initial setup:
 
 1.  **Add an Item:** Enter the item name into the search bar and select the item from the CStone search results to add it to your collection.
 2.  **Manage Inventory:** Use the filter bar to search your items and edit quantities or notes for individual entries.
+3.  **Scanning Inventory, how it works:
+   - Open Star Citizen and open your local inventory
+   - Click on "Customs" and filter by Undersuits **OR** Armor and clothes
+   - Close "Customs"
+   - Click in "Import from SC" in the top-menu
+   - Select Mode (1x1 All Clothes and Armor (except Undersuits)) or (1x2 Only for Undersuits)
+   - A console opens, wait for it to load and press "Insert" once it asks for it
+   - The program switches back to Star Citizen and begins to move the mouse over the items and scans them (avoid moving your mouse or tabbing out)
+   - Once done the console closes and you click the button on GearCrate
+   - Dont forget to press "import to inventory" too
+
+   - You can always stop the scan by moving your mouse in any corner or pressing Delete on your keyboard
