@@ -1,4 +1,4 @@
-## Star Citizen GearCrate Inventory Manager
+## GearCrate Star Citizen Inventory Manager
 
 A desktop tool designed for managing and tracking your collected armor, clothing, and items within your Star Citizen inventory.
 
@@ -7,8 +7,14 @@ A desktop tool designed for managing and tracking your collected armor, clothing
 * Inventory Management: Track your collection with item images and personal notes.
 * Live Search: Search and import item details directly from CStone.space.
 * Local Storage: All inventory data and cached images are stored locally on your PC using an SQLite database.
+* Gear-Sets: Keep up to date which armor set you completed or which part is missing.
+* Import from SC: Scan your Star Citizen inventory and import it into the GearCrate inventory.
 
 ---
+
+## Download
+
+Download the latest test version here: https://github.com/KruemelGames/GearCrate/releases/tag/Test
 
 ## Installation & Launch (Optimized Workflow)
 
