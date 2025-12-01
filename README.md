@@ -45,7 +45,7 @@ Why does this programm need administrative permissions?
 
 ## Usage
 
-1.  **Add an Item:** Enter the item name into the search bar and select the item from the CStone search results to add it to your collection.
+1.  **Add an Item:** Enter the item name into the search bar and select the item from the search results to add it to your collection.
 2.  **Manage Inventory:** Use the filter bar to search your items and edit quantities or notes for individual entries.
 3.  **Scanning Inventory**
 How it works:
