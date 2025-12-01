@@ -47,7 +47,8 @@ Why does this programm need administrative permissions?
 
 1.  **Add an Item:** Enter the item name into the search bar and select the item from the CStone search results to add it to your collection.
 2.  **Manage Inventory:** Use the filter bar to search your items and edit quantities or notes for individual entries.
-3.  **Scanning Inventory, how it works:
+3.  **Scanning Inventory**
+How it works:
    - Open Star Citizen and open your local inventory
    - Click on "Customs" and filter by Undersuits **OR** Armor and clothes
    - Close "Customs"
