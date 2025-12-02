@@ -112,14 +112,19 @@ start /wait "" "%INSTALLER_PATH%" /quiet InstallAllUsers=1 PrependPath=1 Include
 del "%INSTALLER_PATH%" 2>nul
 echo [LOG] Python installed >> "%LOGFILE%"
 
+echo [OK] Python installed!
+echo [+] Updating environment...
+echo [LOG] Refreshing PATH from registry... >> "%LOGFILE%"
+
+:: Refresh PATH from registry
+for /f "skip=2 tokens=3*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul') do set "SYSTEM_PATH=%%a %%b"
+for /f "skip=2 tokens=3*" %%a in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USER_PATH=%%a %%b"
+set "PATH=%SYSTEM_PATH%;%USER_PATH%"
+
+echo [LOG] PATH updated from registry >> "%LOGFILE%"
+echo [OK] Environment updated!
 echo.
-echo [OK] Python 3.11.9 installed!
-echo [OK] Restarting setup...
-echo.
-echo [LOG] Restarting setup... >> "%LOGFILE%"
-pause
-start "" "%~f0"
-exit
+goto :INSTALL_REQS
 
 :: ---------------------------------------------------
 :: User wants manual installation
