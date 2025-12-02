@@ -6,7 +6,7 @@ echo =========================================
 echo       GearCrate - Installation Setup
 echo =========================================
 echo.
-echo Works with Python 3.8 – 3.13
+echo Works with Python 3.8 - 3.13
 echo Your existing Python will be kept if >= 3.8
 echo.
 echo =========================================
@@ -23,14 +23,14 @@ if %errorlevel% neq 0 (
     goto :ASK_INSTALL_PYTHON
 )
 
-python -c "import sys; v = sys.version_info; exit(0 if (v.major > 3 or (v.major == 3 and v.minor >= 8)) else 1)" >nul 2>&1
+python -c "import sys; v = sys.version_info; exit^(0 if ^(v.major > 3 or ^(v.major == 3 and v.minor >= 8^)^) else 1^)" >nul 2>&1
 if %errorlevel% neq 0 (
     echo [X] Python version too old (3.8 or newer required).
     goto :ASK_INSTALL_PYTHON
 )
 
 for /f "tokens=2" %%a in ('python --version 2^>^&1') do set "PYTHON_VERSION=%%a"
-echo [OK] Python !PYTHON_VERSION! detected – excellent, continuing!
+echo [OK] Python !PYTHON_VERSION! detected - excellent, continuing!
 echo.
 goto :INSTALL_REQS
 
@@ -41,7 +41,7 @@ goto :INSTALL_REQS
 echo.
 echo No compatible Python found.
 echo Do you want to download and install Python 3.11.9 automatically?
-echo (Recommended – very stable and widely compatible)
+echo (Recommended - very stable and widely compatible)
 echo.
 choice /c YN /n /m " [Y] Yes, install Python 3.11.9    [N] No, I'll install it myself "
 if %errorlevel%==1 goto :INSTALL_PYTHON
@@ -85,7 +85,7 @@ exit
 :: ---------------------------------------------------
 :MANUAL_PYTHON
 echo.
-echo Okay – just install Python 3.11 or 3.12 from
+echo Okay - just install Python 3.11 or 3.12 from
 echo https://www.python.org/downloads/
 echo and make sure "Add Python to PATH" is checked.
 echo.
@@ -98,7 +98,7 @@ exit /b 0
 :: 3 Install packages
 :: ---------------------------------------------------
 :INSTALL_REQS
-echo [2/3] Installing required Python packages (3–10 minutes)...
+echo [2/3] Installing required Python packages (3-10 minutes)...
 echo.
 
 python -m pip install --upgrade pip --quiet
