@@ -30,21 +30,18 @@ echo =========================================
 echo       GearCrate - Installation Setup
 echo =========================================
 echo.
-echo Works with Python 3.8 to 3.13
-echo Your existing Python will be kept if greater than or equal to 3.8
+echo Log-Datei: setup-log.txt
 echo.
 echo =========================================
-echo.
-echo Writing log to: setup-log.txt
 echo.
 
 echo [LOG] Setup started as Administrator >> "%LOGFILE%"
 
 :: ---------------------------------------------------
-:: 1. Check Python (greater than or equal to 3.8)
+:: 1. Check if Python exists
 :: ---------------------------------------------------
 echo [1/3] Checking Python installation...
-echo [1/3] Checking Python installation... >> "%LOGFILE%"
+echo [1/3] Checking Python... >> "%LOGFILE%"
 
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
@@ -53,113 +50,103 @@ if %errorlevel% neq 0 (
     goto :ASK_INSTALL_PYTHON
 )
 
-echo [LOG] Python found, checking version... >> "%LOGFILE%"
-
-python -c "import sys; v = sys.version_info; exit^(0 if ^(v.major > 3 or ^(v.major == 3 and v.minor >= 8^)^) else 1^)" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [X] Python version too old (3.8 or newer required).
-    echo [ERROR] Python version too old >> "%LOGFILE%"
-    goto :ASK_INSTALL_PYTHON
-)
-
 for /f "tokens=2" %%a in ('python --version 2^>^&1') do set "PYTHON_VERSION=%%a"
-echo [OK] Python !PYTHON_VERSION! detected - excellent, continuing!
-echo [OK] Python !PYTHON_VERSION! detected >> "%LOGFILE%"
+echo [OK] Python !PYTHON_VERSION! found!
+echo [OK] Python !PYTHON_VERSION! found >> "%LOGFILE%"
 echo.
 goto :INSTALL_REQS
 
 :: ---------------------------------------------------
-:: Ask if user wants auto-install (now 3.11.9)
+:: Ask if user wants auto-install
 :: ---------------------------------------------------
 :ASK_INSTALL_PYTHON
 echo. >> "%LOGFILE%"
 echo [LOG] Asking user to install Python... >> "%LOGFILE%"
 echo.
-echo No compatible Python found.
-echo Do you want to download and install Python 3.11.9 automatically?
-echo (Recommended - very stable and widely compatible)
+echo Python not found on your system.
+echo Do you want to download and install Python 3.11.9?
 echo.
 choice /c YN /n /m " [Y] Yes, install Python 3.11.9    [N] No, I'll install it myself "
 if %errorlevel%==1 (
-    echo [LOG] User chose to install Python >> "%LOGFILE%"
+    echo [LOG] User chose YES >> "%LOGFILE%"
     goto :INSTALL_PYTHON
 )
 if %errorlevel%==2 (
-    echo [LOG] User chose manual installation >> "%LOGFILE%"
+    echo [LOG] User chose NO >> "%LOGFILE%"
     goto :MANUAL_PYTHON
 )
 
 :: ---------------------------------------------------
-:: 2 Download + install Python 3.11.9
+:: Download and install Python 3.11.9
 :: ---------------------------------------------------
 :INSTALL_PYTHON
 echo. >> "%LOGFILE%"
 echo [LOG] Starting Python download... >> "%LOGFILE%"
 echo.
-echo [+] Downloading Python 3.11.9 (64-bit) ...
+echo [+] Downloading Python 3.11.9 (64-bit)...
 set "INSTALLER_URL=https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe"
 set "INSTALLER_PATH=%TEMP%\python-3.11.9-installer.exe"
 
-echo [LOG] Download URL: %INSTALLER_URL% >> "%LOGFILE%"
-echo [LOG] Target path: %INSTALLER_PATH% >> "%LOGFILE%"
+echo [LOG] URL: %INSTALLER_URL% >> "%LOGFILE%"
 
 powershell -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri '%INSTALLER_URL%' -OutFile '%INSTALLER_PATH%' -UseBasicParsing"
 
 if not exist "%INSTALLER_PATH%" (
     echo.
     echo [ERROR] Download failed!
-    echo [ERROR] Python download failed >> "%LOGFILE%"
-    echo Please install Python manually: https://www.python.org/downloads/
+    echo [ERROR] Download failed >> "%LOGFILE%"
+    echo.
+    echo Please install Python manually:
+    echo https://www.python.org/downloads/
     pause
     exit /b 1
 )
 
-echo [OK] Download finished.
-echo [LOG] Download completed successfully >> "%LOGFILE%"
-echo [+] Installing Python 3.11.9 silently...
-echo [LOG] Starting Python installation... >> "%LOGFILE%"
+echo [OK] Download complete.
+echo [LOG] Download OK >> "%LOGFILE%"
+echo [+] Installing Python 3.11.9...
+echo [LOG] Installing Python... >> "%LOGFILE%"
+
 start /wait "" "%INSTALLER_PATH%" /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 Include_pip=1
 
 del "%INSTALLER_PATH%" 2>nul
-echo [LOG] Installation completed, installer deleted >> "%LOGFILE%"
+echo [LOG] Python installed >> "%LOGFILE%"
 
 echo.
-echo [OK] Python 3.11.9 installed successfully.
-echo      Restarting setup so the new PATH is active...
+echo [OK] Python 3.11.9 installed!
+echo [OK] Restarting setup...
 echo.
-echo [LOG] Python installed, restarting setup... >> "%LOGFILE%"
+echo [LOG] Restarting setup... >> "%LOGFILE%"
 pause
 start "" "%~f0"
 exit
 
 :: ---------------------------------------------------
-:: User prefers manual installation
+:: User wants manual installation
 :: ---------------------------------------------------
 :MANUAL_PYTHON
 echo.
-echo Okay - just install Python 3.11 or 3.12 from
+echo OK - please install Python 3.11 or 3.12 from:
 echo https://www.python.org/downloads/
-echo and make sure "Add Python to PATH" is checked.
 echo.
-echo Then simply run this setup.bat again.
+echo Make sure to check "Add Python to PATH"!
 echo.
-echo [LOG] User will install Python manually >> "%LOGFILE%"
+echo Then run this setup.bat again.
+echo.
+echo [LOG] Manual installation chosen >> "%LOGFILE%"
 pause
 exit /b 0
 
 :: ---------------------------------------------------
-:: 3 Install packages
+:: Install packages
 :: ---------------------------------------------------
 :INSTALL_REQS
-echo [2/3] Installing required Python packages (3-10 minutes)...
-echo [2/3] Installing Python packages... >> "%LOGFILE%"
+echo [2/3] Installing packages (3-10 minutes)...
+echo [2/3] Installing packages... >> "%LOGFILE%"
 echo.
 
 echo [LOG] Upgrading pip... >> "%LOGFILE%"
 python -m pip install --upgrade pip --quiet
-if %errorlevel% neq 0 (
-    echo [ERROR] Failed to upgrade pip >> "%LOGFILE%"
-)
 
 echo [LOG] Installing requirements.txt... >> "%LOGFILE%"
 pip install -r requirements.txt --quiet
@@ -167,31 +154,33 @@ pip install -r requirements.txt --quiet
 if %errorlevel% neq 0 (
     echo.
     echo =========================================
-    echo [ERROR] Failed to install packages!
+    echo [ERROR] Package installation failed!
     echo =========================================
-    echo [ERROR] Package installation failed >> "%LOGFILE%"
+    echo.
+    echo [ERROR] pip install failed >> "%LOGFILE%"
     echo Try manually: pip install -r requirements.txt
+    echo.
     pause
     exit /b 1
 )
 
-echo [LOG] All packages installed successfully >> "%LOGFILE%"
+echo [LOG] All packages installed >> "%LOGFILE%"
 
 :: ---------------------------------------------------
-:: 4 Finished
+:: Done
 :: ---------------------------------------------------
 echo.
 echo =========================================
-echo        INSTALLATION COMPLETED!
+echo        INSTALLATION COMPLETE!
 echo =========================================
 echo.
-echo Start GearCrate with administrator rights:
+echo Start GearCrate with:
 echo.
 echo       start-desktop-admin.bat
 echo.
 echo.
 echo Happy hunting in Star Citizen!
 echo.
-echo [LOG] Setup completed successfully >> "%LOGFILE%"
+echo [LOG] Setup completed >> "%LOGFILE%"
 echo [LOG] Finished: %date% %time% >> "%LOGFILE%"
 pause
