@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Edit Item · GearCrateLite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header class="app-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="app-title">
+            <img
+              src="{{ url_for('static', filename='img/logos/GearCrate_Logo.png') }}"
+              class="app-logo"
+              alt="GearCrate logo"
+            >
+            GEARCRATE <sub>Lite</sub>
+          </h1>
+          <p class="subtitle">Lite Inventory Manager for Star Citizen</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content single-column">
+      <section class="card card-form">
+        <h2 class="section-title">Edit Item</h2>
+
+        <form method="post"
+              action="{{ url_for('update_item', item_id=item['id']) }}"
+              class="form-layout">
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Name</span>
+              <input name="name" required value="{{ item['name'] }}">
+            </label>
+            <label class="form-field">
+              <span>Category</span>
+              <input name="category" value="{{ item['category'] or '' }}">
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field small">
+              <span>Quantity</span>
+              <input name="quantity" type="number" min="1" value="{{ item['quantity'] }}">
+            </label>
+            <label class="form-field">
+              <span>Location</span>
+              <input name="location" value="{{ item['location'] or '' }}">
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Notes</span>
+              <textarea name="notes" rows="3">{{ item['notes'] or '' }}</textarea>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Image URL</span>
+              <input
+                name="image_url"
+                value="{{ item['image_url'] or '' }}"
+              >
+            </label>
+          </div>
+
+          <div class="form-actions space-between">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span class="footer-text">GearCrateLite · Edit item</span>
+    </footer>
+  </div>
+</body>
+</html>
