@@ -65,7 +65,11 @@ function updateDynamicContent() {
 
 // Override alert messages to use translations
 window.showNotification = function(messageKey, params) {
+<<<<<<< HEAD
     const message = (window.tr && params) ? window.tr(messageKey, params) : (window.tr ? window.tr(messageKey) : messageKey);
+=======
+    const message = (window.i18n && params) ? window.i18n.t(messageKey, params) : (window.i18n ? window.i18n.t(messageKey) : messageKey);
+>>>>>>> b83d7c9778a75427e86f9d4f80360d8ae067e50d
     
     const notification = document.createElement('div');
     notification.textContent = message;
@@ -90,12 +94,20 @@ window.showNotification = function(messageKey, params) {
 
 // Translated confirm dialogs
 window.confirmTranslated = function(messageKey, params) {
+<<<<<<< HEAD
     const message = (window.tr && params) ? window.tr(messageKey, params) : (window.tr ? window.tr(messageKey) : messageKey);
+=======
+    const message = (window.i18n && params) ? window.i18n.t(messageKey, params) : (window.i18n ? window.i18n.t(messageKey) : messageKey);
+>>>>>>> b83d7c9778a75427e86f9d4f80360d8ae067e50d
     return confirm(message);
 };
 
 // Translated alerts
 window.alertTranslated = function(messageKey, params) {
+<<<<<<< HEAD
     const message = (window.tr && params) ? window.tr(messageKey, params) : (window.tr ? window.tr(messageKey) : messageKey);
+=======
+    const message = (window.i18n && params) ? window.i18n.t(messageKey, params) : (window.i18n ? window.i18n.t(messageKey) : messageKey);
+>>>>>>> b83d7c9778a75427e86f9d4f80360d8ae067e50d
     return alert(message);
 };

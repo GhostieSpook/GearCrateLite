@@ -201,6 +201,7 @@ const i18n = new TranslationSystem();
 // Make i18n globally accessible
 window.i18n = i18n;
 
+<<<<<<< HEAD
 /**
  * FIXED: Renamed global helper from 't' to 'tr' to avoid collision
  * with minified libraries (like Fuse.js) that use 't' internally.
@@ -214,6 +215,18 @@ window.tr = tr;
 
 // Debug: Log that translation system is ready
 console.log('🌍 Translation system loaded. tr() function available:', typeof window.tr);
+=======
+// Helper function for quick translations
+function t(key, params) {
+    return i18n.t(key, params);
+}
+
+// Make t() globally accessible
+window.t = t;
+
+// Debug: Log that translation system is ready
+console.log('🌍 Translation system loaded. t() function available:', typeof window.t);
+>>>>>>> b83d7c9778a75427e86f9d4f80360d8ae067e50d
 
 // Update UI when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {

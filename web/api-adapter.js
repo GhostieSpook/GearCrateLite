@@ -48,7 +48,10 @@ const api = {
     // Scanner methods
     set_scan_mode: (mode) => apiCall('set_scan_mode', { mode }),
     start_scanner: () => apiCall('start_scanner', {}),
+<<<<<<< HEAD
     get_scan_results: () => apiCall('get_scan_results', {}),
+=======
+>>>>>>> b83d7c9778a75427e86f9d4f80360d8ae067e50d
     import_scanned_items: (items) => apiCall('import_scanned_items', { items }),
 
     // User config methods
@@ -76,7 +79,10 @@ const api = {
     // Scanner methods (camelCase)
     setScanMode: (mode) => apiCall('set_scan_mode', { mode }),
     startScanner: () => apiCall('start_scanner', {}),
+<<<<<<< HEAD
     getScanResults: () => apiCall('get_scan_results', {}),
+=======
+>>>>>>> b83d7c9778a75427e86f9d4f80360d8ae067e50d
     importScannedItems: (items) => apiCall('import_scanned_items', { items }),
 
     // User config methods (camelCase)

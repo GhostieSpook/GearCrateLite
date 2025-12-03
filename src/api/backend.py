@@ -526,6 +526,7 @@ class API:
             if not os.path.exists(scanner_script):
                 return {'success': False, 'error': 'Scanner script not found'}
 
+<<<<<<< HEAD
             # Clear previous scan results before starting new scan
             detected_items_file = os.path.join(invdetect_path, 'detected_items.txt')
             not_detected_file = os.path.join(invdetect_path, 'not_detected.md')
@@ -546,6 +547,8 @@ class API:
             except Exception as e:
                 print(f'⚠️ Could not clear not_detected.md: {e}')
 
+=======
+>>>>>>> b83d7c9778a75427e86f9d4f80360d8ae067e50d
             # Get current scan mode (default to 1 if not set)
             scan_mode = getattr(self, 'current_scan_mode', 1)
 
