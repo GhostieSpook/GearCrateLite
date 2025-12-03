@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ item['name'] }} · GearCrateLite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header class="app-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="app-title">
+            <img
+              src="{{ url_for('static', filename='img/logos/GearCrate_Logo.png') }}"
+              class="app-logo"
+              alt="GearCrate logo"
+            >
+            GEARCRATE <sub>Lite</sub>
+          </h1>
+          <p class="subtitle">Item Details</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content single-column">
+      <section class="card card-form">
+        <h2 class="section-title">{{ item["name"] }}</h2>
+
+        <div class="item-detail-layout">
+          {% if item["image_url"] %}
+            <div class="item-detail-image-wrap">
+              <img
+                class="item-detail-image"
+                src="{{ item['image_url'] }}"
+                alt="{{ item['name'] }}"
+              >
+            </div>
+          {% endif %}
+
+          <div class="item-detail-meta">
+            <div class="item-detail-row">
+              {% if item["category"] %}
+                <span class="item-pill">Category: {{ item["category"] }}</span>
+              {% endif %}
+              {% if item["location"] %}
+                <span class="item-pill item-pill-secondary">Location: {{ item["location"] }}</span>
+              {% endif %}
+            </div>
+
+            <p class="item-detail-quantity">
+              Quantity: <strong>{{ item["quantity"] }}</strong>
+            </p>
+
+            {% if item["notes"] %}
+              <div class="item-detail-notes">
+                <h3>Notes / Description</h3>
+                <p>{{ item["notes"] }}</p>
+              </div>
+            {% endif %}
+
+            {% if wiki_url %}
+              <div class="item-detail-links">
+                <a href="{{ wiki_url }}" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-secondary btn-small">
+                  Open on Star Citizen Wiki
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="form-actions space-between" style="margin-top: 1rem;">
+          <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+          <a href="{{ url_for('edit_item', item_id=item['id']) }}" class="btn btn-primary">Edit Item</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span class="footer-text">GearCrateLite · Item details</span>
+    </footer>
+  </div>
+</body>
+</html>
