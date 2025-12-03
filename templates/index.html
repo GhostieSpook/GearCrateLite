@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GearCrateLite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="app-title">
+            <img
+              src="{{ url_for('static', filename='img/logos/GearCrate_Logo.png') }}"
+              class="app-logo"
+              alt="GearCrate logo"
+            >
+            GEARCRATE <sub>Lite</sub>
+          </h1>
+          <p class="subtitle">Lite Inventory Manager for Star Citizen</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <!-- Left: add item form -->
+      <section class="card card-form">
+        <h2 class="section-title">Add Item</h2>
+        <form method="post" action="{{ url_for('add_item') }}" class="form-layout">
+          <div class="form-row">
+            <label class="form-field">
+              <span>Name</span>
+              <input id="name-input" name="name" required>
+            </label>
+
+            <!-- Lookup field -->
+            <label class="form-field lookup-field">
+              <span>Lookup (Wiki)</span>
+              <input
+                id="lookup-input"
+                type="text"
+                placeholder="Type FS-9, Antium, etc."
+                autocomplete="off"
+              >
+              <div id="lookup-results" class="lookup-results"></div>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Category</span>
+              <input name="category" placeholder="Helmet, Rifle, Med, etc.">
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field small">
+              <span>Quantity</span>
+              <input name="quantity" type="number" min="1" value="1">
+            </label>
+            <label class="form-field">
+              <span>Location</span>
+              <input name="location" placeholder="Local, Ship, Station, etc.">
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Notes</span>
+              <textarea name="notes" rows="3" placeholder="Loadout notes, ship, role..."></textarea>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Image URL</span>
+              <input
+                name="image_url"
+                placeholder="Auto-filled from lookup (or paste custom URL)"
+              >
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Add</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right: inventory list -->
+      <section class="card card-inventory">
+        <div class="inventory-header">
+          <h2 class="section-title">📦 Inventory</h2>
+          <div class="text-filter">
+            <input
+              type="text"
+              id="filter-input"
+              placeholder="Filter by name, category, location or notes…"
+              autocomplete="off"
+            >
+          </div>
+        </div>
+
+        {% if items %}
+          <div class="inventory-grid">
+            {% for item in items %}
+              <article class="inventory-item">
+                {% if item["image_url"] %}
+                  <img
+                    class="item-image"
+                    src="{{ item['image_url'] }}"
+                    alt="{{ item['name'] }}"
+                  >
+                {% endif %}
+
+                <header class="item-header">
+                  <h3 class="item-name">{{ item["name"] }}</h3>
+                  <span class="item-quantity">x{{ item["quantity"] }}</span>
+                </header>
+
+                <div class="item-meta">
+                  {% if item["category"] %}
+                    <span class="item-pill">{{ item["category"] }}</span>
+                  {% endif %}
+                  {% if item["location"] %}
+                    <span class="item-pill item-pill-secondary">{{ item["location"] }}</span>
+                  {% endif %}
+                </div>
+
+                {% if item["notes"] %}
+                  <p class="item-notes">
+                    {{ item["notes"] | truncate(140, True, '…') }}
+                  </p>
+                {% endif %}
+
+                <footer class="item-footer">
+                  <a href="{{ url_for('view_item', item_id=item['id']) }}"
+                     class="btn btn-secondary btn-small">Details</a>
+
+                  <a href="{{ url_for('edit_item', item_id=item['id']) }}"
+                     class="btn btn-secondary btn-small">Edit</a>
+
+                  <form method="post"
+                        action="{{ url_for('delete_item', item_id=item['id']) }}">
+                    <button type="submit" class="btn btn-danger btn-small">Delete</button>
+                  </form>
+                </footer>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty-state">No items yet. Add your first one on the left.</p>
+        {% endif %}
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <span class="footer-text">GearCrateLite · Local SQLite · Linux friendly · Wiki-backed lookup</span>
+    </footer>
+  </div>
+
+  <!-- Lookup + filter script -->
+  <script>
+    (function () {
+      const lookupInput = document.getElementById("lookup-input");
+      const resultsBox = document.getElementById("lookup-results");
+      const nameInput = document.getElementById("name-input");
+      const imageInput = document.querySelector("input[name='image_url']");
+      const categoryInput = document.querySelector("input[name='category']");
+      const notesInput = document.querySelector("textarea[name='notes']");
+      const filterInput = document.getElementById("filter-input");
+
+      let lastController = null;
+
+      function clearResults() {
+        if (resultsBox) {
+          resultsBox.innerHTML = "";
+        }
+      }
+
+      // --- simple category guesser based on title/description ---
+      function guessCategory(title, description) {
+        const text = (title + " " + (description || "")).toLowerCase();
+
+        if (text.includes("helmet")) return "Helmet";
+        if (text.includes("undersuit") || text.includes("flight suit")) return "Undersuit";
+        if (text.includes("backpack")) return "Backpack";
+        if (text.includes("arms") || text.includes("torso") || text.includes("legs"))
+          return "Armor";
+        if (text.includes("lmgs") || text.includes("lmg")) return "LMG";
+        if (text.includes("smg")) return "SMG";
+        if (text.includes("sniper")) return "Sniper Rifle";
+        if (text.includes("shotgun")) return "Shotgun";
+        if (text.includes("pistol") || text.includes("sidearm")) return "Pistol";
+        if (text.includes("rifle")) return "Rifle";
+        if (text.includes("med") || text.includes("medical") || text.includes("medgun"))
+          return "Med";
+        if (text.includes("grenade")) return "Grenade";
+        if (text.includes("tool") || text.includes("tractor") || text.includes("multitool"))
+          return "Utility";
+
+        return "";
+      }
+
+      // --- Lookup wiring ---
+      if (lookupInput && resultsBox && nameInput && imageInput) {
+        lookupInput.addEventListener("input", function () {
+          const q = this.value.trim();
+          clearResults();
+          if (q.length < 2) return;
+
+          if (lastController) lastController.abort();
+          lastController = new AbortController();
+
+          fetch("/lookup?q=" + encodeURIComponent(q), { signal: lastController.signal })
+            .then(r => r.json())
+            .then(items => {
+              clearResults();
+              items.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "lookup-result";
+
+                const titleEl = document.createElement("div");
+                titleEl.textContent = item.title;
+                titleEl.style.fontWeight = "500";
+                div.appendChild(titleEl);
+
+                if (item.description) {
+                  const descEl = document.createElement("div");
+                  descEl.textContent = item.description;
+                  descEl.style.fontSize = "0.75rem";
+                  descEl.style.opacity = "0.75";
+                  descEl.style.marginTop = "2px";
+                  div.appendChild(descEl);
+                }
+
+                div.addEventListener("click", () => {
+                  // Name
+                  nameInput.value = item.title;
+                  lookupInput.value = item.title;
+
+                  // Image
+                  if (item.image_url) {
+                    imageInput.value = item.image_url;
+                  }
+
+                  // Category (only if user hasn't typed one yet)
+                  if (categoryInput && !categoryInput.value.trim()) {
+                    const guessed = guessCategory(item.title, item.description);
+                    if (guessed) {
+                      categoryInput.value = guessed;
+                    }
+                  }
+
+                  // Notes (only if user hasn't typed any yet)
+                  if (notesInput && item.description && !notesInput.value.trim()) {
+                    notesInput.value = item.description;
+                  }
+
+                  clearResults();
+                });
+
+                resultsBox.appendChild(div);
+              });
+            })
+            .catch(() => {});
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!resultsBox.contains(e.target) && e.target !== lookupInput) {
+            clearResults();
+          }
+        });
+      }
+
+      // --- Filter wiring (search bar over inventory) ---
+      if (filterInput) {
+        filterInput.addEventListener("input", function () {
+          const q = this.value.trim().toLowerCase();
+          const cards = document.querySelectorAll(".inventory-item");
+
+          cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(q) ? "" : "none";
+          });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
