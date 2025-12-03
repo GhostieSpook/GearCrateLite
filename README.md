@@ -1,63 +1,209 @@
-## GearCrate Star Citizen Inventory Manager
+# 📦 GearCrate Lite (Linux Edition)
 
-A desktop tool designed for managing and tracking your collected armor, clothing, and items within your Star Citizen inventory.
+GearCrate Lite is a lightweight Flask web application for tracking Star Citizen gear and inventory.  
+This project is a **remix and simplified rebuild** of the original GearCrate by KruemelGames:  
+👉 https://github.com/KruemelGames/GearCrate
 
-### Key Features
-
-* Inventory Management: Track your collection with item images and personal notes.
-* Live Search: Search and import item details directly from CStone.space.
-* Local Storage: All inventory data and cached images are stored locally on your PC using an SQLite database.
-* Gear-Sets: Keep up to date which armor set you completed or which part is missing.
-* Import from SC: Scan your Star Citizen inventory and import it into the GearCrate inventory.
+GearCrate Lite focuses on minimal setup, fast performance, and local-only storage.
 
 ---
 
-## Download
+## 🐧 Built for Linux
 
-Download the latest test version here: https://github.com/KruemelGames/GearCrate/releases/tag/Test
+Designed for:
 
-## Installation & Launch (Optimized Workflow)
-
-This project requires **Python 3.8 or higher** to run.
-
-### 1. One-Time Setup (First Use)
-
-For a complete installation of all dependencies and an automatic initial launch, use the consolidated setup script:
-
-1.  Ensure **Python** is already installed and accessible on your system.
-2.  Double-click to run **`setup.bat`**.
-3.  If that doesn't work make sure to rightclick and open as administrator
-
-> **Note:** The **`setup.bat`** script automatically installs all required Python libraries from the `requirements.txt` file, verifies the Python version, and launches the application upon successful completion.
-
-### 2. Daily Application Launch
-
-To start the program for routine use after the initial setup:
-
-1.  Double-click to run **`start-desktop-admin.bat`**.
-
-> **Note:** This script initiates the local Python backend server and automatically opens the application window asking for admin permissions (GUI) once the server is ready.
-Why does this programm need administrative permissions?
-- Reason: Elevated privileges are often necessary for the keyboard and pyautogui libraries to reliably capture hotkeys and control the mouse while interacting with a full-screen or high-privilege application (like the game itself).
-- Risk Warning: Any program run with Administrator rights has full access to your operating system. Users must verify the integrity of the source code before running the script.
+- Ubuntu / Debian / Linux Mint  
+- Arch / Manjaro  
+- Fedora / RHEL  
+- Raspberry Pi OS (ARM)
 
 ---
 
+## 🚀 Features
 
-## Usage
+- Flask-based lightweight web UI  
+- SQLite database auto-created on first launch  
+- Add, edit, delete, and view items  
+- Automatic merging (same name + category + location)  
+- Optional image URLs  
+- Star Citizen Wiki autocomplete with thumbnails & short descriptions  
+- No external database or cloud dependency  
+- Fully local, fast, and private  
 
-1.  **Add an Item:** Enter the item name into the search bar and select the item from the search results to add it to your collection.
-2.  **Manage Inventory:** Use the filter bar to search your items and edit quantities or notes for individual entries.
-3.  **Scanning Inventory**
-How it works:
-   - Open Star Citizen and open your local inventory
-   - Click on "Customs" and filter by Undersuits **OR** Armor and clothes
-   - Close "Customs"
-   - Click in "Import from SC" in the top-menu
-   - Select Mode (1x1 All Clothes and Armor (except Undersuits)) or (1x2 Only for Undersuits)
-   - A console opens, wait for it to load and press "Insert" once it asks for it
-   - The program switches back to Star Citizen and begins to move the mouse over the items and scans them (avoid moving your mouse or tabbing out)
-   - Once done the console closes and you click the button on GearCrate
-   - Dont forget to press "import to inventory" too
+---
 
-   - You can always stop the scan by moving your mouse in any corner or pressing Delete on your keyboard
+## 📂 Project Structure
+
+```
+GearCrateLite/
+│
+├── app.py
+├── inventory.db
+├── README.md
+├── requirements.txt
+│
+├── static/
+│   ├── css/
+│   │   └── styles.css
+│   └── img/
+│       └── logos/
+│           ├── GearCrate_Anim.gif
+│           ├── GearCrate_Logo.png
+│           ├── GearCrate_title.png
+│           └── GearCrate_Title.psd
+│
+└── templates/
+    ├── index.html
+    ├── edit_item.html
+    └── view_item.html
+```
+
+---
+
+## 📚 Requirements
+
+### Install Linux dependencies
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-pip python3-venv unzip
+```
+
+*(Use equivalent packages for Arch/Fedora/etc.)*
+
+### Python dependencies (from requirements.txt)
+
+```
+Flask
+requests
+```
+
+---
+
+## 🔧 Installation
+
+### 1. Extract or Clone the Project
+
+```bash
+unzip GearCrateLite.zip
+cd GearCrateLite
+```
+
+—or—
+
+```bash
+git clone https://github.com/yourusername/GearCrateLite.git
+cd GearCrateLite
+```
+
+---
+
+### 2. Create and Activate Virtual Environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+---
+
+### 3. Install Python Packages
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+# ▶️ HOW TO RUN THE APP
+
+## 1. Activate the virtual environment
+
+```bash
+cd GearCrateLite
+source .venv/bin/activate
+```
+
+## 2. Start the Flask server
+
+```bash
+python3 app.py
+```
+
+Output example:
+
+```
+ * Running on http://127.0.0.1:5000/
+```
+
+## 3. Open GearCrate Lite in your browser
+
+```
+http://127.0.0.1:5000
+```
+
+---
+
+## 🌐 Optional: Make the app available on your LAN
+
+Edit the last line in `app.py`:
+
+```python
+app.run(debug=True, host="0.0.0.0")
+```
+
+Restart the app:
+
+```bash
+python3 app.py
+```
+
+Now you can access it from any device on your network:
+
+```
+http://<your-LAN-ip>:5000
+```
+
+Example:
+
+```
+http://192.168.1.50:5000
+```
+
+---
+
+## 🗄️ Database Info
+
+`inventory.db` is created automatically on first run.
+
+### Reset your inventory:
+
+```bash
+rm inventory.db
+python3 app.py
+```
+
+---
+
+## 🔍 Star Citizen Wiki Autocomplete
+
+The `/lookup` endpoint uses the **Star Citizen Wiki API** to fetch:
+
+- Item names  
+- Thumbnail images  
+- Short text extracts  
+
+Used for autocomplete fields inside the UI.
+
+---
+
+## 📝 Attribution
+
+This project is a **remix of GearCrate** by KruemelGames:  
+https://github.com/KruemelGames/GearCrate
+
+GearCrate Lite is a simplified, redesigned, and Linux-focused adaptation.
+
+---
+
+## 🧑‍🚀 Enjoy GearCrate Lite!
