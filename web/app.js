@@ -19,7 +19,7 @@ function getItemIcon(item, size = 'medium') {
         }
         return localImageUrl;
     }
-
+	//
     // No local image - return placeholder path based on item type
     const partTypeMapping = {
         'helmet': 'Helmet',

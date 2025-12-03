@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
             i18n.setLanguage(newLang);
         });
     }
-    
+    //
     // Listen for language changes
     document.addEventListener('languageChanged', function(e) {
         console.log(`Language changed to: ${e.detail.language}`);

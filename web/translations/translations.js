@@ -1,6 +1,6 @@
 // Translation System - Mehrsprachiges UI
 // Unterstützte Sprachen: Deutsch, English, Français, Español
-
+//
 class TranslationSystem {
     constructor() {
         this.translations = {
