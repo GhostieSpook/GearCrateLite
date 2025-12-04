@@ -1,34 +1,33 @@
-# 📦 GearCrate Lite (Linux Edition)
+# 📦 GearCrate Lite  
+Lite Inventory Manager for Star Citizen  
+*A simplified remix of GearCrate:* https://github.com/KruemelGames/GearCrate
 
-GearCrate Lite is a lightweight Flask web application for tracking Star Citizen gear and inventory.  
-This project is a **remix and simplified rebuild** of the original GearCrate by KruemelGames:  
-👉 https://github.com/KruemelGames/GearCrate
-
-GearCrate Lite focuses on minimal setup, fast performance, and local-only storage.
-
----
-
-## 🐧 Built for Linux
-
-Designed for:
-
-- Ubuntu / Debian / Linux Mint  
-- Arch / Manjaro  
-- Fedora / RHEL  
-- Raspberry Pi OS (ARM)
+GearCrate Lite is a lightweight Flask web application for quickly tracking weapons, armor, consumables, and loadout gear.  
+It uses a local SQLite database, runs offline, and includes automatic wiki lookup + thumbnail support.
 
 ---
 
-## 🚀 Features
+## 🖥️ Supported Operating Systems
 
-- Flask-based lightweight web UI  
-- SQLite database auto-created on first launch  
-- Add, edit, delete, and view items  
-- Automatic merging (same name + category + location)  
-- Optional image URLs  
-- Star Citizen Wiki autocomplete with thumbnails & short descriptions  
-- No external database or cloud dependency  
-- Fully local, fast, and private  
+GearCrate Lite runs on:
+
+- **Windows 10 / 11**
+- **Linux (Ubuntu, Debian, Mint, Arch, Fedora, etc.)**
+- **WSL2**
+- **Raspberry Pi (ARM)**
+
+Instructions for both platforms are provided below.
+
+---
+
+# 🚀 Features
+
+- Clean, dark UI built for quick inventory entry  
+- Automatic merging of identical items  
+- Wiki lookup with thumbnails & descriptions  
+- Local SQLite storage (no cloud required)  
+- Single-file Flask backend  
+- Lightning-fast offline operation  
 
 ---
 
@@ -36,108 +35,85 @@ Designed for:
 
 ![GearCrate Lite Preview](static/img/preview.png)
 
-## 📂 Project Structure
+# 📂 Project Structure
 
 ```
 GearCrateLite/
 │
 ├── app.py
-├── inventory.db
-├── README.md
+├── inventory.db            # auto-created
 ├── requirements.txt
+├── README.md
 │
-├── static/
-│   ├── css/
-│   │   └── styles.css
-│   └── img/
-│       └── logos/
-│           ├── GearCrate_Logo.png
+├── templates/              # HTML files
+│   ├── index.html
+│   ├── edit_item.html
+│   └── view_item.html
 │
-└── templates/
-    ├── index.html
-    ├── edit_item.html
-    └── view_item.html
+└── static/                 # CSS, logos, assets
+    ├── css/
+    │   └── styles.css
+    └── img/logos/
+        ├── GearCrate_Logo.png
 ```
 
 ---
 
-## 📚 Requirements
+# 🛠️ Installation & Setup
 
-### Install Linux dependencies
+Below are complete setup instructions for **Windows** and **Linux**.
 
-```bash
-sudo apt update
-sudo apt install -y python3 python3-pip python3-venv unzip
-```
+---
 
-*(Use equivalent packages for Arch/Fedora/etc.)*
+# 🔹 Windows Installation
 
-### Python dependencies (from requirements.txt)
+### 1. Install Python
+Download Python from:  
+https://www.python.org/downloads/
 
-```
-Flask
-requests
+✔ Make sure **"Add Python to PATH"** is checked during install.
+
+---
+
+### 2. Open Command Prompt or PowerShell
+
+Navigate to the GearCrateLite folder:
+
+```powershell
+cd path\to\GearCrateLite
 ```
 
 ---
 
-## 🔧 Installation
+### 3. Create a virtual environment
 
-### 1. Extract or Clone the Project
-
-```bash
-unzip GearCrateLite.zip
-cd GearCrateLite
+```powershell
+python -m venv venv
 ```
 
-—or—
+Activate it:
 
-```bash
-git clone https://github.com/yourusername/GearCrateLite.git
-cd GearCrateLite
+```powershell
+venv\Scripts\activate
 ```
 
 ---
 
-### 2. Create and Activate Virtual Environment
+### 4. Install dependencies
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
----
-
-### 3. Install Python Packages
-
-```bash
+```powershell
 pip install -r requirements.txt
 ```
 
 ---
 
-# ▶️ HOW TO RUN THE APP
+### 5. Run the app
 
-## 1. Activate the virtual environment
-
-```bash
-cd GearCrateLite
-source .venv/bin/activate
+```powershell
+python app.py
 ```
 
-## 2. Start the Flask server
-
-```bash
-python3 app.py
-```
-
-Output example:
-
-```
- * Running on http://127.0.0.1:5000/
-```
-
-## 3. Open GearCrate Lite in your browser
+Open your browser and visit:
 
 ```
 http://127.0.0.1:5000
@@ -145,24 +121,74 @@ http://127.0.0.1:5000
 
 ---
 
-## 🌐 Optional: Make the app available on your LAN
+# 🔹 Linux Installation
 
-Edit the last line in `app.py`:
+### 1. Install Python & tools
 
-```python
-app.run(debug=True, host="0.0.0.0")
+Ubuntu/Debian example:
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-pip python3-venv
 ```
 
-Restart the app:
+---
+
+### 2. Navigate to the project
+
+```bash
+cd GearCrateLite
+```
+
+---
+
+### 3. Create a virtual environment
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+---
+
+### 4. Install Python dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+### 5. Run the app
 
 ```bash
 python3 app.py
 ```
 
-Now you can access it from any device on your network:
+Open:
 
 ```
-http://<your-LAN-ip>:5000
+http://127.0.0.1:5000
+```
+
+---
+
+# 🌐 Optional: Access on your LAN
+
+If you want other devices to access GearCrate Lite:
+
+Edit the last line of `app.py`:
+
+```python
+app.run(debug=True, host="0.0.0.0")
+```
+
+Then start the app normally.
+
+Other devices can now open:
+
+```
+http://YOUR_LOCAL_IP:5000
 ```
 
 Example:
@@ -173,38 +199,38 @@ http://192.168.1.50:5000
 
 ---
 
-## 🗄️ Database Info
+# 🗄️ Database
 
-`inventory.db` is created automatically on first run.
+All data is stored in:
 
-### Reset your inventory:
+```
+inventory.db
+```
 
-```bash
-rm inventory.db
-python3 app.py
+### Reset everything:
+
+```
+Delete inventory.db → restart the app
+```
+
+The file will be recreated automatically.
+
+---
+
+# 🔧 Development Notes
+
+### ⚠ Do NOT upload your virtual environment (`venv/`) to GitHub.
+
+Your `.gitignore` should include:
+
+```
+venv/
+.venv/
+__pycache__/
+*.pyc
+inventory.db
 ```
 
 ---
 
-## 🔍 Star Citizen Wiki Autocomplete
-
-The `/lookup` endpoint uses the **Star Citizen Wiki API** to fetch:
-
-- Item names  
-- Thumbnail images  
-- Short text extracts  
-
-Used for autocomplete fields inside the UI.
-
----
-
-## 📝 Attribution
-
-This project is a **remix of GearCrate** by KruemelGames:  
-https://github.com/KruemelGames/GearCrate
-
-GearCrate Lite is a simplified, redesigned, and Linux-focused adaptation.
-
----
-
-## 🧑‍🚀 Enjoy GearCrate Lite!
+# 🧑‍🚀 Enjoy GearCrate Lite!
