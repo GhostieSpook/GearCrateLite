@@ -32,6 +32,10 @@ Designed for:
 
 ---
 
+## Preview
+
+![GearCrate Lite Preview](static/img/preview.png)
+
 ## 📂 Project Structure
 
 ```
@@ -47,10 +51,7 @@ GearCrateLite/
 │   │   └── styles.css
 │   └── img/
 │       └── logos/
-│           ├── GearCrate_Anim.gif
 │           ├── GearCrate_Logo.png
-│           ├── GearCrate_title.png
-│           └── GearCrate_Title.psd
 │
 └── templates/
     ├── index.html
